@@ -29,9 +29,8 @@ public class HHLLDetector {
 		bars = new ArrayList<BarTrendBarDTO>();
 		//averageBarSize = BarUtil.averageBarSize(original_quotes);
 		//avgBarSizeOpenClose = BarUtil.averageBarSizeOpenClose(original_quotes);
-				
+
 		// consolidate the up/down bars
-		
 		bars.add(createNewElement(quotes[0], 0));
 		//System.out.println("Quote:" + quotes[0].time + " open:" + quotes[0].open + " close:" + quotes[0].close + " high:" + quotes[0].high + " low:" + quotes[0].low);
 		for ( int i = 1; i <= lastbar; i++){

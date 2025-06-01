@@ -133,8 +133,9 @@ public class RV_Diverage extends TradeManager2 {
 
 				//checkDiverageSignal_givenBigTrend(data); // latest <----
 				
-				checkDiverageSignal_20250212(data);
-
+				//checkDiverageSignal_20250212(data);  // 
+				checkDiverageSignal_20250527(data);  // in progress
+				
 				// checkDiverageSignal_narrow_breakout(data);
 				
 				
@@ -1580,6 +1581,88 @@ public class RV_Diverage extends TradeManager2 {
 		return null;
 	}
 
+	
+	public Trade checkDiverageSignal_20250527(QuoteData data){ // to be replace by heckDiverageSignal_givenBigTrend_new
+		QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
+		int lastbar = quotes.length - 1;
+		double[] ema = Indicator.calculateEMA(quotes, 20);
+
+		int nbarLow = 2; // the number of bars lower before the last nigh
+		int gapDiverageWidth = 24; // max gap width
+		
+		QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
+		int lastbarL = quotesL.length - 1;
+		//double[] emaL20 = Indicator.calculateEMA(quotesL, 20);
+		//int avgBarSize = (int)(BarUtil.averageBarSize(quotesL)/PIP_SIZE);
+		
+		// check big trend first
+		HHLLDetector hhllDector = new HHLLDetector(quotesL,PIP_SIZE);
+		BarTrendBarDTO[] trends = hhllDector.getTrends();
+		BarTrendBarDTO lastTrend = trends[trends.length-1];
+		BarTrendBarDTO previousTrend = trends[trends.length-2];
+		BarTrendBarDTO ppTrend = trends[trends.length-3];
+
+		if ( lastTrend.direction == Constants.DIRECTION_DOWN ) {
+		
+			if ((quotes[lastbar].high >= ema[lastbar])) {
+				double startLow =  quotesL[lastTrend.begin].low;
+				int start = Utility.getQuotePositionByLow(quotes, startLow);
+				
+				DiverageDAO dv = DiverageSetup.findLastDiverageHighClosest(quotes, start, lastbar-1, 5, 10 * PIP_SIZE );  
+				if (dv != null) {
+
+						if ( quotes[lastbar-1].close > dv.triggerPrice )
+							return null;
+						
+						if (findTradeHistory(Constants.ACTION_SELL, quotes[start].time) != null)
+							return null;
+						
+						double triggerPrice = quotes[lastbar-1].close;
+
+						if (trade != null) {
+							if (Constants.ACTION_SELL.equals(trade.action)) {
+								return trade;
+							} else if (trade.status.equals(Constants.STATUS_FILLED)) {
+								closePositionByMarket(trade.remainingPositionSize, triggerPrice);
+							}
+						}
+						if (!( (dv.pullBackSize > 20 * PIP_SIZE) || (dv.pullBackSize > (10 * PIP_SIZE) && (lastTrend.getLength() > 1) )))
+							return null;
+
+						String detectDetail = "Prev High: " + quotes[dv.prePos].time + " " + quotes[dv.prePos].high + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
+						warning(symbol + " SELL detected " + data.time + detectDetail);
+						//hhllDector.printTrend(quotesL, PIP_SIZE);
+
+						createOpenTrade(Constants.TRADE_RV, Constants.ACTION_SELL);
+						trade.status = Constants.STATUS_DETECTED;
+						trade.detectTime = quotes[lastbar].time;
+						trade.setFirstBreakOutStartTime(quotes[start].time);// for history lookup only
+
+						TradeEvent tv = new TradeEvent(TradeEvent.TRADE_DETECTED, quotes[lastbar].time);
+						tv.addNameValue("Detected", detectDetail);
+						trade.addTradeEvent(tv);
+
+						if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
+							super.strategy.addStrategyTrigger(
+									trade.symbol + " " + trade.detectTime + " " + trade.action + " " + triggerPrice);
+							super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " chart:"
+									+ Constants.CHART_60_MIN + " " + trade.action + " " + triggerPrice, trade);
+						}
+								 
+						if (MODE == Constants.SIGNAL_MODE) {
+							removeTrade();
+							return null;
+						} else {
+							enterMarketPosition(triggerPrice);
+							return trade;
+						}
+					}
+				}
+			}
+		return null;
+	}	
+
+	
 
 	public Trade checkDiverageSignal_trend_continuation(QuoteData data) {
 		QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
