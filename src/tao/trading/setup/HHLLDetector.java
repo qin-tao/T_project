@@ -39,7 +39,7 @@ public class HHLLDetector {
 			//System.out.printf("   Current Element direction:%d, open:%f close:%f high:%f low:%f\n", currElement.direction, currElement.open, currElement.close, currElement.high, currElement.low);
 			if ( currElement.direction == Constants.DIRECTION_DOWN ){
 				//if (BarUtil.isUpBar(quotes[i]) && quotes[i].low > currElement.low){
-				if ( (quotes[i].high > quotes[i-1].high) && (quotes[i].low > quotes[i-1].low)){
+				if ( (quotes[i].high > quotes[i-1].high)/* && (quotes[i].low > quotes[i-1].low)*/){
 					BarTrendBarDTO newBar = createNewElement(quotes[i],Constants.DIRECTION_UP,i);
 					newBar.low = currElement.low; // start with the lowest point
 					newBar.low = quotes[i].low < quotes[i-1].low ? quotes[i].low : quotes[i-1].low; 
@@ -54,7 +54,7 @@ public class HHLLDetector {
 				
 			} else if ( currElement.direction == Constants.DIRECTION_UP ){
 				//if (BarUtil.isDownBar(quotes[i]) && quotes[i].high < currElement.high){
-				if ( (quotes[i].high < quotes[i-1].high) && (quotes[i].low < quotes[i-1].low)){
+				if (/*(quotes[i].high < quotes[i-1].high) &&*/ (quotes[i].low < quotes[i-1].low)){
 					BarTrendBarDTO newBar = createNewElement(quotes[i],Constants.DIRECTION_DOWN,i);
 					newBar.high = quotes[i].high > quotes[i-1].high ? quotes[i].high : quotes[i-1].high; 
 					bars.add(newBar);
@@ -68,7 +68,7 @@ public class HHLLDetector {
 			}
 		}
 		
-		sortTrendChange2();
+		//sortTrendChange2();
 	}
 
 	public void sortBars (QuoteData[] quotes, double PIP_SIZE ){
