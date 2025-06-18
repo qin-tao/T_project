@@ -332,7 +332,6 @@ public class Strategy
 					logger.info(STRATEGY_NAME + " account:" + ib_account + " exp:" + exp);
 				
 		    		for ( int i = 0; i < sftest.ALL_SYMBOLS; i++ ){ 
-						System.out.println("MA222: " + instruments[i].getSymbol());
 		    			tradeManagerNew[j*sftest.ALL_SYMBOLS + i]  = new MA_Manual(ib_account, m_client, 0,  instruments[i], this, exchangeRate );
 		    			((MA_Manual)tradeManagerNew[j*sftest.ALL_SYMBOLS + i]).setPositionSize((int)(lot_size[i]*exp));
 		    		}

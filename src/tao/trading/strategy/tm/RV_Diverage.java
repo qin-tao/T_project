@@ -133,8 +133,8 @@ public class RV_Diverage extends TradeManager2 {
 
 				//checkDiverageSignal_givenBigTrend(data); // latest <----
 				
-				//checkDiverageSignal_20250212(data);  // 
-				checkDiverageSignal_20250527(data);  // in progress
+				checkDiverageSignal_20250212(data);  // 
+				//checkDiverageSignal_20250527(data);  // in progress
 				
 				// checkDiverageSignal_narrow_breakout(data);
 				
@@ -1408,14 +1408,10 @@ public class RV_Diverage extends TradeManager2 {
 						}
 					}
 
-					// check big trend
-					//HHLLDetector hhllDector = new HHLLDetector(quotesDay,PIP_SIZE);
-					
+					/*
 					// check big trend
 					HHLLDetector hhllDector = new HHLLDetector(quotesL,PIP_SIZE);
 
-					
-					
 					//HHLLDetector hhllDector = new HHLLDetector();
 					//hhllDector.sortBars(quotesL,PIP_SIZE);
 					//hhllDector.printTrend(quotesDay, PIP_SIZE);
@@ -1436,10 +1432,10 @@ public class RV_Diverage extends TradeManager2 {
 
 					if (( quotesL[previousTrend.end].high > emaL20[previousTrend.end] && quotesL[previousTrend.end].low < emaL20[previousTrend.end])) 
 						return null;
-
 					
 					if ( lastTrend.getSize(PIP_SIZE) > previousTrend.getSize(PIP_SIZE) )
 						return null;
+					*/
 
 					//if ( previousTrend.getSize(PIP_SIZE) < ppTrend.getSize(PIP_SIZE))
 					//	return null;
@@ -1509,7 +1505,7 @@ public class RV_Diverage extends TradeManager2 {
 							closePositionByMarket(trade.remainingPositionSize, triggerPrice);
 						}
 					}
-
+					/*
 					// check big trend
 					HHLLDetector hhllDector = new HHLLDetector(quotesL,PIP_SIZE);
 					//HHLLDetector hhllDector = new HHLLDetector();
@@ -1539,9 +1535,9 @@ public class RV_Diverage extends TradeManager2 {
 					//if ( previousTrend.getSize(PIP_SIZE) < ppTrend.getSize(PIP_SIZE))
 					//	return null;
 					
-					
 					if (!( (dv.pullBackSize > 20 * PIP_SIZE) || (dv.pullBackSize > (10 * PIP_SIZE) && (lastTrend.getLength() > 1) )))
 						return null;
+					*/
 					
 					String detectDetail = "Prev Low: " + quotes[dv.prePos].time + " " + quotes[dv.prePos].low + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
 					warning(symbol + " BUY detected " + data.time + detectDetail);
