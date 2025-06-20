@@ -668,8 +668,8 @@ public class SFTest extends SF implements EWrapper
 			logger.info("Request account update: "+ ib_account);
 			m_client.reqAccountUpdates(true,ib_account);	
 			sleep(0.1);  // sleep 6 seconds
-			m_client.reqAccountUpdates(false,ib_account);
-			sleep(0.1);  // sleep 6 seconds
+			//m_client.reqAccountUpdates(false,ib_account);
+			//sleep(0.1);  // sleep 6 seconds
 		}
 	}
 	

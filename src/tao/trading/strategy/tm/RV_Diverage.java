@@ -1435,14 +1435,15 @@ public class RV_Diverage extends TradeManager2 {
 					
 					if ( lastTrend.getSize(PIP_SIZE) > previousTrend.getSize(PIP_SIZE) )
 						return null;
-					*/
+					
 
 					//if ( previousTrend.getSize(PIP_SIZE) < ppTrend.getSize(PIP_SIZE))
 					//	return null;
 
 					if (!( (dv.pullBackSize > 20 * PIP_SIZE) || (dv.pullBackSize > (10 * PIP_SIZE) && (lastTrend.getLength() > 1) )))
 						return null;
-
+					*/
+					
 					String detectDetail = "Prev High: " + quotes[dv.prePos].time + " " + quotes[dv.prePos].high + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
 					warning(symbol + " SELL detected " + data.time + detectDetail);
 					//hhllDector.printTrend(quotesL, PIP_SIZE);
