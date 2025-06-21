@@ -1800,23 +1800,18 @@ public class Pattern
     	phls.toArray(ret);
     	
     	// 0 is the lastbar
-    	if ( size > 0 )
-    	{
+    	if ( size > 0 ){
     		ret[0].pushStart = start;
 	    	for ( int i = 1; i <= size-1; i++)
 	    		ret[i].pushStart = ret[i-1].pullBack.pos;
 	    	
-	    	for ( int i = 0; i < size; i++ )
-	    	{
+	    	for ( int i = 0; i < size; i++ ){
 	    		ret[i].pushSize =  quotes[ret[i].prePos].high - quotes[ret[i].pushStart].low;
 	    		ret[i].pushWidth =  ret[i].prePos - ret[i].pushStart + 1;
 	    		ret[i].pullBackSize = quotes[ret[i].prePos].high - ret[i].pullBack.low;
 	    		ret[i].pullBackRatio = ret[i].pullBackSize/ret[i].pushSize;
-	    	}
-
-	    	for ( int i = 1; i < size; i++)
-	    	{
-	    		ret[i].breakOutSize =  quotes[ret[i].prePos].high - quotes[ret[i-1].prePos].high;
+	    		if ( i > 0 )
+	    			ret[i].breakOutSize =  quotes[ret[i].prePos].high - quotes[ret[i-1].prePos].high;
 	    	}
     	}
     	
@@ -1838,11 +1833,10 @@ public class Pattern
     	Vector<PushHighLow> phls = new Vector<PushHighLow>();
     	
     	PushHighLow phl = null;
-   		//for ( int i = (quotes[start+1].high < quotes[start].high)?start+1:start; i <= lastbar-3; i++ )
    		for ( int i = start; i <= lastbar-2; i++ ){
     		for ( int j = i+1; j <= lastbar; j++ ){ // looking for the next high
-    			if ( quotes[j].low < quotes[i].low){ // make sure it is 2 bar away
-    				if ( j > i + 1){
+    			if ( quotes[j].low < quotes[i].low ){ // make sure it is 2 bar away
+    				if ( j > i + 1 ){
     	    			phl = new PushHighLow(i, j);
     	    			phl.pullBack = Utility.getHigh( quotes, i, j); 
     	    			phls.add(phl);
@@ -1869,22 +1863,23 @@ public class Pattern
     	phls.toArray(ret);
     	
     	// 0 is the lastbar
-    	if ( size > 0 )
-    	{
+    	if ( size > 0 ){
     		ret[0].pushStart = start;
 	    	for ( int i = 1; i <= size-1; i++)
 	    		ret[i].pushStart = ret[i-1].pullBack.pos;
 	    	
-	    	for ( int i = 0; i < size; i++ )
-	    	{
+	    	for ( int i = 0; i < size; i++ ){
+	    		if (i > 0 )
+	    			ret[i].breakOutSize =  quotes[ret[i-1].prePos].low - quotes[ret[i].prePos].low;
 	    		ret[i].pushSize =  quotes[ret[i].pushStart].high - quotes[ret[i].prePos].low;
 	    		ret[i].pushWidth =  ret[i].prePos - ret[i].pushStart + 1;
 	    		ret[i].pullBackSize = ret[i].pullBack.high - quotes[ret[i].prePos].low;
 	    		ret[i].pullBackRatio = ret[i].pullBackSize/ret[i].pushSize;
+	    		if (i > 0 )
+	    			ret[i].breakOutSize =  quotes[ret[i-1].prePos].low - quotes[ret[i].prePos].low;
 	    	}
 
-	    	for ( int i = 1; i < size; i++)
-	    	{
+	    	for ( int i = 1; i < size; i++){
 	    		ret[i].breakOutSize =  quotes[ret[i-1].prePos].low - quotes[ret[i].prePos].low;
 	    	}
     	}
@@ -1894,28 +1889,7 @@ public class Pattern
      }
 
 
-     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    public static PushList findPastHighList(QuoteData[] quotes, int start, int lastbar )
+     public static PushList findPastHighList(QuoteData[] quotes, int start, int lastbar )
     {
     	Vector<PushHighLow> phls = new Vector<PushHighLow>();
 

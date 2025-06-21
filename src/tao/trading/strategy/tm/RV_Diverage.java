@@ -105,8 +105,8 @@ public class RV_Diverage extends TradeManager2 {
 	 * 
 	 *****************************************************************************************************************************/
 	public void process(int req_id, QuoteData data) {
-		// if ( req_id != 500 ) //500
-		  // return;
+		 if ( req_id != 515 ) //500
+		   return;
 
 		// System.out.println("request id:" + req_id + " data:" + data.time);
 
@@ -131,10 +131,10 @@ public class RV_Diverage extends TradeManager2 {
 
 				//checkREVTradeSetup3(data); // large diverage
 
-				//checkDiverageSignal_givenBigTrend(data); // latest <----
+				checkDiverageSignal_givenBigTrend(data); // latest <----
 				
 				//checkDiverageSignal_20250212(data);  // 
-				checkDiverageSignal_20250527(data);  // in progress
+				//checkDiverageSignal_20250527(data);  // in progress
 				
 				// checkDiverageSignal_narrow_breakout(data);
 				
@@ -1196,7 +1196,7 @@ public class RV_Diverage extends TradeManager2 {
 		int nbarLow = 2; // the number of bars lower before the last nigh
 		int gapDiverageWidth = 24; // max gap width
 
-	   // int bigTrend = this.strategy.sftest.setting.getIntProperty(symbol);
+	    int bigTrend = this.strategy.sftest.setting.getIntProperty(symbol);
 
 		/*
 		QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
@@ -1596,7 +1596,8 @@ public class RV_Diverage extends TradeManager2 {
 		QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
 		int lastbarL = quotesL.length - 1;
 		//double[] emaL20 = Indicator.calculateEMA(quotesL, 20);
-		int avgBarSize = (int)(BarUtil.averageBarSize(quotesL)/PIP_SIZE);
+		int avgBarSizeL = (int)(BarUtil.averageBarSize(quotesL)/PIP_SIZE);
+		int avgBarSize = (int)(BarUtil.averageBarSize(quotes)/PIP_SIZE);
 		
 		// check big trend first
 		HHLLDetector hhllDector = new HHLLDetector(quotesL,PIP_SIZE);
@@ -1605,7 +1606,7 @@ public class RV_Diverage extends TradeManager2 {
 		BarTrendBarDTO previousTrend = trends[trends.length-2];
 		BarTrendBarDTO ppTrend = trends[trends.length-3];
 
-		if (lastTrend.getSize(PIP_SIZE) < avgBarSize * 2)
+		if (lastTrend.getSize(PIP_SIZE) < avgBarSizeL * 2)
 			return null;
 		
 		if ( lastTrend.direction == Constants.DIRECTION_DOWN ) {
@@ -1614,10 +1615,16 @@ public class RV_Diverage extends TradeManager2 {
 				int start = Utility.getQuotePositionByLow(quotes, startLow);
 				
 				PushList pushList = Pattern.findPast1Highs1(quotes, start, lastbar);
-				if ((pushList != null ) && ( pushList.phls != null ) && ( pushList.phls.length >= 3)){
+				if ((pushList != null ) && ( pushList.phls != null ) ){
 					PushHighLow[] phls = pushList.phls;
 					PushHighLow lastPush = phls[phls.length - 1]; 
 					
+					if (( lastPush.pullBackSize/PIP_SIZE > 1.5 * avgBarSize ) ||  ( pushList.phls.length >= 5))
+						return null;
+
+					System.out.println("last trend:" + lastTrend.direction + " " + quotesL[lastTrend.begin].time + " " + quotesL[lastTrend.begin].high + " " + quotesL[lastTrend.end].time + " " + quotesL[lastTrend.end].low);
+					System.out.println("start low: " + quotes[start].time + " " + quotes[start].low);
+
 					triggerPrice = quotes[lastPush.prePos].high;
 					
 					QuoteData[] quotesS = getQuoteData(Constants.CHART_1_MIN);
@@ -1708,10 +1715,16 @@ public class RV_Diverage extends TradeManager2 {
 				int start = Utility.getQuotePositionByHigh(quotes, startHigh);
 				
 				PushList pushList = Pattern.findPast1Lows1(quotes, start, lastbar);
-				if ((pushList != null ) && ( pushList.phls != null ) && ( pushList.phls.length >= 3)){
+				if ((pushList != null ) && ( pushList.phls != null )){
 					PushHighLow[] phls = pushList.phls;
 					PushHighLow lastPush = phls[phls.length - 1]; 
 					
+					if (( lastPush.pullBackSize/PIP_SIZE > 1.5 * avgBarSize ) ||  ( pushList.phls.length >= 5))
+						return null;
+
+					System.out.println("last trend:" + lastTrend.direction + " " + quotesL[lastTrend.begin].time + " " + quotesL[lastTrend.begin].low + " " + quotesL[lastTrend.end].time + " " + quotesL[lastTrend.end].high);
+					System.out.println("start high: " + quotes[start].time + " " + quotes[start].high);
+
 					triggerPrice = quotes[lastPush.prePos].low;
 					
 					QuoteData[] quotesS = getQuoteData(Constants.CHART_1_MIN);
