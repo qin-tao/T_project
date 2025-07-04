@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -858,6 +859,12 @@ public class SFTest extends SF implements EWrapper
 		logger.config(setting.toString());
  	    
 		int ib_id=setting.getIb_id();
+		LocalDateTime now = LocalDateTime.now();
+		int day = now.getDayOfYear();
+		int hour = now.getHour();
+		int minute = now.getMinute();
+		ib_id = day * 10000 + hour * 100 + minute; 
+		
 		int port = setting.getPort();
 
 	   	exchangeRate.put("EUR",0.9104);

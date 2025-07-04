@@ -105,8 +105,9 @@ public class RV_Diverage extends TradeManager2 {
 	 * 
 	 *****************************************************************************************************************************/
 	public void process(int req_id, QuoteData data) {
-		 if ( req_id != 515 ) //500
-		   return;
+
+		//if ( req_id != 515 ) //500  
+		 //  return;
 
 		// System.out.println("request id:" + req_id + " data:" + data.time);
 
