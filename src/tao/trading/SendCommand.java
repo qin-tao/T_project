@@ -28,6 +28,7 @@ public class SendCommand
 		"AUD.USD",
 		"AUD.JPY",
 		"AUD.NZD",
+		"NZD.USD",
 		"USD.DKK",
 		"USD.SGD",
 		"SPY.USD"
