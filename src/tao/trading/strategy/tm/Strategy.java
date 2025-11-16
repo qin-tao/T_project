@@ -679,8 +679,8 @@ public class Strategy
 				logger.info(STRATEGY_NAME + " create trade:" + cmd.getSymbol() + " " + cmd.getPrice());
 				for ( int i = 0; i < tradeManager.length; i++){
 					if (cmd.getSymbol().equalsIgnoreCase(tradeManager[i].getSymbol()) && ( tradeManager[i].getTrade() == null)){
-						logger.info(STRATEGY_NAME + " create limite trade:" + cmd.getSymbol() + " " + cmd.getPrice());
 						tradeManager[i].createTradePlaceLimit(cmd.getAction(), (int)(cmd.getQuantity()*tradeManager[i].getPOSITION_SIZE()), cmd.getPrice() );
+						logger.info(STRATEGY_NAME + " limite order:" + cmd.getSymbol() + " " + cmd.getPrice() + "created");
 					}
 				}
 			}
@@ -792,7 +792,7 @@ public class Strategy
 		        FileInputStream file = new FileInputStream(f);
 	    		ObjectInputStream input = new ObjectInputStream( file );
 	        	Command cmd = ( Command ) input.readObject();
-	        	System.out.println("External Command Received:" + cmd.toString());
+	        	logger.info("External Command Received:" + cmd.toString());
 	        	lastCmdFileModified = lastFileModified;
 		        input.close();
 		        f.delete(); // remove the command file;

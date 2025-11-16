@@ -334,9 +334,11 @@ public abstract class TradeManager2 {
 	 * @return
 	 **************************************************************************************************************************/
 	public int placeLmtOrder(String action, double limitPrice, int posSize, String ocaGroup) {
-		logger.warning("Mode:" + MODE + " " + symbol + " place limit order" + action + " " + limitPrice + " " + posSize);
-		if (MODE != Constants.REAL_MODE)
+		logger.info("Mode:" + MODE + " " + symbol + " place limit order" + action + " " + limitPrice + " " + posSize);
+		if (MODE != Constants.REAL_MODE){
+			logger.warning("Not real mode, trade not placed");
 			return 97;
+		}
 
 		Order order = createOrder();
 		order.m_action = action;
@@ -352,7 +354,7 @@ public abstract class TradeManager2 {
 		}
 
 		m_client.placeOrder(order.m_orderId, m_contract, order);
-		logger.warning(symbol + " " + " orderId:" + order.m_orderId + " limit " + action + " order placed " + posSize + " " + limitPrice);
+		logger.info(symbol + " " + " orderId:" + order.m_orderId + " limit " + action + " order placed " + posSize + " " + limitPrice);
 
 		return order.m_orderId;
 
@@ -3412,25 +3414,15 @@ public abstract class TradeManager2 {
 	 */
 
 	public void createTradePlaceLimit(String action, int quantity, double price) {
-
-		logger.info("Create limit trade for" + symbol + " " + action + " " + quantity + " " + price);
+		logger.fine("Create limit trade for " + symbol + " " + action + " " + quantity + " " + price);
 		if (trade == null) {
-			/*QuoteData[] quotes60 = getQuoteData(Constants.CHART_60_MIN);
-			int lastbar60 = quotes60.length - 1;
-			logger.info("quotes 60 length is " + quotes60.length);
-			if ((Math.abs(price - quotes60[lastbar60].close) > 100 * getPIP_SIZE())) {
-				logger.severe("Input CSV: Incorrect price for LIMIT " + getSymbol() + " " + action + " " + quantity + " " + price);
-				return;
-			}*/
-
-			int posSize = quantity;//(int) (quantity * getPOSITION_SIZE());
+			int posSize = quantity;
 			trade = createOpenTrade(Constants.TRADE_MA, action, null, posSize, price);
-
 			trade.detectTime = IBDataFormatter.format(new java.util.Date());
 
 			enterLimitPositionMulti(posSize, price);
 
-			logger.info(getSymbol() + action + " " + posSize + " " + price + " " + " placed");
+			logger.info(getSymbol() + " " + action + " " + posSize + " " + price + " " + " placed");
 			return;
 		}
 
