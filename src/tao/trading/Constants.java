@@ -97,7 +97,9 @@ public class Constants
     public static String STATUS_INCREMENTAL_COMPLETED = "STATUS_INCREMENTAL_COMPLETED";	
     
     public static int DIRECTION_UP = 1;
+    public static int DIRECTION_UP_ON_PULLBACK = 2;
     public static int DIRECTION_DOWN = -1;
+    public static int DIRECTION_DOWN_ON_PULLBACK = -2;
     public static int DIRECTION_UNKNOWN = 0;
 
     public static String SMA200 = "SMA200";

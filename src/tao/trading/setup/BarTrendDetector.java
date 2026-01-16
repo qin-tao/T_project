@@ -35,8 +35,14 @@ public class BarTrendDetector {
 		BarTrendBarDTO currElement = null;
 		if (BarUtil.isUpBar(original_quotes[0]))
 			currElement = new BarTrendBarDTO(Constants.DIRECTION_UP);
-		else 
+		else if (BarUtil.isDownBar(original_quotes[0]))
 			currElement = new BarTrendBarDTO(Constants.DIRECTION_DOWN);
+		else 
+			currElement = new BarTrendBarDTO(Constants.DIRECTION_UNKNOWN);
+		/*currElement.open = original_quotes[0].open;
+		currElement.close = original_quotes[0].close;
+		currElement.high = original_quotes[0].high;
+		currElement.low = original_quotes[0].low;*/
 		currElement.begin = currElement.end = 0;
 		bars.add(currElement);
 
@@ -44,7 +50,7 @@ public class BarTrendDetector {
 
 		for ( int i = 1; i <= lastbar; i++){
 			if (BarUtil.isUpBar(quotes[i])/* && ( BarUtil.barSize(quotes[i]) > 5 * PIP_SIZE )*/){
-				if (currElement.direction == Constants.DIRECTION_DOWN ){
+				if (currElement.direction != Constants.DIRECTION_UP ){
 					currElement = new BarTrendBarDTO(Constants.DIRECTION_UP);
 					currElement.begin = currElement.end = i;
 					bars.add(currElement);
@@ -52,7 +58,7 @@ public class BarTrendDetector {
 				}
 			}
 			else if (BarUtil.isDownBar(quotes[i])/* && ( BarUtil.barSize(quotes[i]) > 5 * PIP_SIZE*//* avgBarSize/6*/ ){
-				if (( currElement.direction == Constants.DIRECTION_UP )){
+				if (( currElement.direction != Constants.DIRECTION_DOWN )){
 					currElement = new BarTrendBarDTO(Constants.DIRECTION_DOWN);
 					currElement.begin = currElement.end = i;
 					bars.add(currElement);
@@ -63,7 +69,7 @@ public class BarTrendDetector {
 			currElement.end = i;  // open = close no direction
 		}
 		
-		sortTrendChange();
+		//sortTrendChange();
 	}
 	
 	
@@ -122,19 +128,20 @@ public class BarTrendDetector {
 	}
 
 	
+	public void printBars(QuoteData[] quotes, double PIP_SIZE){
+		Iterator<BarTrendBarDTO> it = bars.iterator();
+		while(it.hasNext()) {
+			BarTrendBarDTO obj = it.next();
+			System.out.println(obj.toString(quotes, PIP_SIZE));
+		}
+	}
 	
-	
-
-	public void printTrend(QuoteData[] quotes){
+	public void printTrend(QuoteData[] quotes, double PIP_SIZE){
 		   Iterator<BarTrendBarDTO> it = bars.iterator();
 		    while(it.hasNext()) {
 		      BarTrendBarDTO obj = it.next();
-		      if ( obj.newTrend ){
-			      System.out.println(obj.toString(quotes));
-		    	  //System.out.println(obj.trend + " " + obj.time);
-		      }
+			     System.out.println(obj.toString(quotes, PIP_SIZE));
 		    }
-	
 	}
 	
 	
@@ -695,11 +702,96 @@ public class BarTrendDetector {
 
 
 	
-	
+	public void analysis(){
+		trend_sorters = new ArrayList<BarTrendTrendDTO>(); ;
+		BarTrendTrendDTO current = new BarTrendTrendDTO(bars.get(0).direction);
+		current.begin = current.end = 0;
+		trend_sorters.add(current);
+		
+		for ( int i = 1; i < bars.size(); i++){
+			if ( bars.get(i).direction == Constants.DIRECTION_UP ){
+				if ( current.direction == Constants.DIRECTION_DOWN ){
+					//if ( getHigh(trend_detectors.get(i)) > original_quotes[trend_detectors.get(i-1).begin].open){
+					//if ( getHigh(bars.get(i)) > original_quotes[bars.get(i-1).begin].high){
+					if ( original_quotes[bars.get(i).end].close > original_quotes[bars.get(i-1).begin].open){
+						current = new BarTrendTrendDTO(Constants.DIRECTION_UP );
+						current.begin = current.end = i;
+						current.triggerPrice = original_quotes[bars.get(i-1).begin].open;
+						//no need for trigger pos now
+						/*for ( int j = bars.get(i).begin; j<=bars.get(i).end;j++){
+							//if (original_quotes[j].high > original_quotes[trend_detectors.get(i-1).begin].open){
+							if (original_quotes[j].high > original_quotes[bars.get(i-1).begin].high){
+								current.triggerPos = j;
+								break;
+							}
+						}*/
+						trend_sorters.add(current);
+						continue;
+					}
+				}
+			}
+			else if ( bars.get(i).direction == Constants.DIRECTION_DOWN ){
+				if ( current.direction == Constants.DIRECTION_UP ){
+					//if ( getLow(trend_detectors.get(i)) < original_quotes[trend_detectors.get(i-1).begin].open){
+					//if ( getLow(bars.get(i)) < original_quotes[bars.get(i-1).begin].low){
+					if ( original_quotes[bars.get(i).end].close < original_quotes[bars.get(i-1).begin].open){
+						current = new BarTrendTrendDTO(Constants.DIRECTION_DOWN );
+						current.begin = current.end = i;
+						current.triggerPrice = original_quotes[bars.get(i-1).begin].open;
+						//no need for trigger pos now
+						/*for ( int j = bars.get(i).begin; j<=bars.get(i).begin;j++){
+							//if (original_quotes[j].low < original_quotes[trend_detectors.get(i-1).end].open){
+							if (original_quotes[j].low < original_quotes[bars.get(i-1).end].low){
+								current.triggerPos = j;
+								break;
+							}
+						}*/
+						trend_sorters.add(current);
+						continue;
+					}
+				}
+			}
+			// default, the current continues
+			current.end = i;
+		}
+	}
 
 	
-	
-	
+	public BarTrendBarDTO analysis_pullback(QuoteData[] quotes, double PIP_SIZE){
+		BarTrendBarDTO detect = new BarTrendBarDTO(Constants.DIRECTION_UNKNOWN);
+		
+		BarTrendBarDTO lastBar = bars.get(bars.size()-1);
+		BarTrendBarDTO prevBar = bars.get(bars.size()-2);
+
+		double lastBarSize = 0;
+		double prevBarSize = 0;
+		
+		if ( lastBar.direction == Constants.DIRECTION_UP ){
+			lastBarSize = quotes[lastBar.end].high - quotes[lastBar.begin].low;
+			// prevBar is down
+			prevBarSize = quotes[prevBar.begin].high - quotes[prevBar.end].low;
+		} else if( lastBar.direction == Constants.DIRECTION_DOWN ){
+			lastBarSize = quotes[lastBar.begin].high - quotes[lastBar.end].low;
+			// prevBar is up
+			prevBarSize = quotes[prevBar.end].high - quotes[prevBar.begin].low;
+		}
+
+		averageBarSize = BarUtil.averageBarSize(original_quotes);
+		avgBarSizeOpenClose = BarUtil.averageBarSizeOpenClose(original_quotes);
+
+		//System.out.println("Previous bar start:" + quotes[prevBar.begin].time + " end:" + quotes[prevBar.end].time + " Previous bar size:" + prevBarSize/PIP_SIZE );
+		//System.out.println("Last bar size:" + quotes[lastBar.begin].time + " end:" + quotes[lastBar.end].time + " Last bar size:" + lastBarSize/PIP_SIZE );
+		if  (( prevBarSize > 1.5 * averageBarSize ) && ( lastBarSize < prevBarSize / 2 )){
+			if ( prevBar.direction == Constants.DIRECTION_UP ){
+				detect.direction = Constants.DIRECTION_UP_ON_PULLBACK;
+				detect.high = quotes[prevBar.begin].high;
+			}
+			else if ( prevBar.direction == Constants.DIRECTION_DOWN )
+				detect.direction = Constants.DIRECTION_DOWN_ON_PULLBACK;
+				detect.low = quotes[prevBar.begin].low;
+		}
+		return detect;
+	}
 	
 	
 	private double getHigh( BarTrendBarDTO btdd ){

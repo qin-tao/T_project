@@ -321,31 +321,41 @@ public class Utility
 			((QuoteData) quotes[i]).pos = i;
 	}
 	
-
-	static public int findFirstPriceHigh(QuoteData[] quotes, int start, double high )
-	{
+	static public int findFirstPriceHigh(QuoteData[] quotes, int start, double high ){
 		int lastbar = quotes.length - 1;
-		
-		for ( int i = start; i <= lastbar; i++)
-		{
+		for ( int i = start; i <= lastbar; i++){
 			if ( quotes[i].high == high )
 				return i;
 		}
 		return Constants.NOT_FOUND;
 	}
-	
-	static public int findFirstPriceLow(QuoteData[] quotes, int start, double low )
-	{
+
+	static public int findLastPriceHigh(QuoteData[] quotes, double high ){
 		int lastbar = quotes.length - 1;
-		
-		for ( int i = start; i <= lastbar; i++)
-		{
+		for ( int i = lastbar; i >= 0; i--){
+			if ( quotes[i].high == high )
+				return i;
+		}
+		return Constants.NOT_FOUND;
+	}
+
+	static public int findFirstPriceLow(QuoteData[] quotes, int start, double low ){
+		int lastbar = quotes.length - 1;
+		for ( int i = start; i <= lastbar; i++){
 			if ( quotes[i].low == low )
 				return i;
 		}
 		return Constants.NOT_FOUND;
 	}
 
+	static public int findLastPriceLow(QuoteData[] quotes, double low ){
+		int lastbar = quotes.length - 1;
+		for ( int i = lastbar; i >= 0; i--){
+			if ( quotes[i].low == low )
+				return i;
+		}
+		return Constants.NOT_FOUND;
+	}
 
 	static public int findPosition(QuoteData[] quotes, int CHART, String timeStr,  int order )
 	{

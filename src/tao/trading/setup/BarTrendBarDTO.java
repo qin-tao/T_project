@@ -75,8 +75,8 @@ public class BarTrendBarDTO {
 		this.low = low;
 	}
 	
-	public int getSize( double PIP_SIZE){
-		return (int) Math.abs((high - low)/PIP_SIZE);
+	public int getSize( QuoteData[] quotes, double PIP_SIZE){
+		return (int) Math.abs((quotes[begin].open - quotes[end].close)/PIP_SIZE);
 	}
 
 	public double getSize(){
@@ -89,7 +89,7 @@ public class BarTrendBarDTO {
 
 	public String toString(QuoteData[] quotes, double PIP_SIZE) {
 		return "BarTrendBarDTO [direction=" + direction + ", newTrend=" + newTrend + ", begin=" + quotes[begin].time + ", end=" + quotes[end].time
-				+ ", open=" + open + ", close=" + close + ", high=" + high + ", low=" + low + ", size=" + getSize(PIP_SIZE) + ", length=" + getLength() +"]";
+				+ ", open=" + quotes[begin].open + ", close=" + quotes[end].close + ", size=" + getSize(quotes, PIP_SIZE) + ", length=" + getLength() +"]";
 	}
 
 	
