@@ -2,12 +2,12 @@ package tao.trading.setup;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import tao.trading.Constants;
 import tao.trading.Indicator;
 import tao.trading.Pattern;
 import tao.trading.QuoteData;
-import tao.trading.dao.ConsectiveBars;
 import tao.trading.dao.MABreakOutList;
 import tao.trading.strategy.util.BarUtil;
 import tao.trading.strategy.util.Utility;
@@ -148,7 +148,11 @@ public class BarTrendDetector {
 	public BarTrendBarDTO getLastTrend(){
 		return bars.get(trend_sorters.size()-1);
 	}
-	
+
+	public List<BarTrendBarDTO> getTrends(){
+		return bars;
+	}
+
 	// obsolete
 	public BarTrendBarDTO detectTrend(QuoteData lastBar){
 		int lastbar = bars.size()-1;

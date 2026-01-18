@@ -279,47 +279,37 @@ public class DiverageSetup {
 	 * This returns the closes peak
 	 * 
 	 ****************************************************/
-	public static DiverageDAO findLastDiverageHighClosest(QuoteData[] quotes, int start, int lastbar, int preBarsLow, /*int gapMaxWidth,*/ double diverageSize ){
-		if ( start < 0 )
+	public static DiverageDAO findLastDiverageHighClosest(QuoteData[] quotes, int start, int lastbar, double diverageSize ){
+		if ( start < 2 )
 			start = 2;
 
 		int dStart = lastbar - 1;
     	while( --dStart >= start ){
-
     		// dStart should be lower than the lastbar
     		if ( quotes[dStart].high > quotes[lastbar].high )
-    			return null;// continue;
+    			return null;// not the highest
     		
     		// dStart should be the highest other than last bar
     		QuoteData lastHigh = Utility.getHigh(quotes, dStart+1, lastbar-1);
     		if ( lastHigh.high > quotes[dStart].high )
     			continue;
     		if ( lastHigh.high > quotes[lastbar].high )
-    			continue;  // not the highest
+    			continue;  // other high in the middle
+    		if (!( quotes[dStart-1].high < quotes[dStart].high && quotes[dStart-2].high < quotes[dStart].high && quotes[dStart-3].high < quotes[dStart].high))
+    			continue;
     		
     		//System.out.println("high found at " + quotes[dStart].time + " " + quotes[dStart].high + " " + quotes[lastbar].time + " " + quotes[lastbar].high);
     		//if ("20241124  18:00:00".equals(quotes[dStart].time ))
     		//	System.out.println("here");
     		
-    		QuoteData pullBackLow = Utility.getLow(quotes, dStart+1, lastbar);
+    		QuoteData pullBackLow = Utility.getLow(quotes, dStart+1, lastbar-1);
     		DiverageDAO dv1 = new DiverageDAO(dStart, lastbar);
     		dv1.triggerPrice = quotes[dStart].high;
     		dv1.pullBackSize = quotes[dStart].high - pullBackLow.low;
     		dv1.pullBackWidth = lastbar - dStart - 1;
-    		if (( dv1.pullBackSize < diverageSize )/* || ( dv1.pullBackWidth > gapMaxWidth )*/)
+    		if ( diverageSize > 0 && dv1.pullBackSize < diverageSize )
     			continue;
 
-    		// n bar before dStart should be lower
-    		//int preBarsLow = 2; //dv1.pullBackWidth;   // the bar below should be at least the pullback width
-    		int nBarLower = 0;
-      		for ( int i = dStart-1; i >=0; i--)
-    			if ( quotes[i].high < quotes[dStart].high)
-    				nBarLower++;
-    			else
-    				break;
-    		if (nBarLower <= preBarsLow)   
-      			continue;
-    		
     		return dv1;
     	}
     	
@@ -332,43 +322,32 @@ public class DiverageSetup {
 	 * This returns the closes peak
 	 * 
 	 ****************************************************/
-	public static DiverageDAO findLastDiverageLowClosest(QuoteData[] quotes, int start, int lastbar, int prevBarsHigh, /*int gapMaxWidth,*/ double diverageSize ){
-		if ( start < 0 )
+	public static DiverageDAO findLastDiverageLowClosest(QuoteData[] quotes, int start, int lastbar, double diverageSize ){
+		if ( start < 2 )
 			start = 2;
 		
     	int dStart = lastbar - 1;
     	while ( --dStart >= start ){
-
     		// dStart should be lower than the lastbar
     		if ( quotes[dStart].low < quotes[lastbar].low )
-    			return null;  //continue;
+    			return null;  // not the lowest;
     		
     		// dStart should be the highest other than last bar
     		QuoteData lastLow = Utility.getLow(quotes, dStart+1, lastbar-1);
     		if ( lastLow.low < quotes[dStart].low )
     			continue;
     		if ( lastLow.low < quotes[lastbar].low )
-    			continue;  // not the lowest
+    			continue;  // other low in the middle
+    		if (!( quotes[dStart-1].low > quotes[dStart].low && quotes[dStart-2].low > quotes[dStart].low && quotes[dStart-3].low > quotes[dStart].low))
+    			continue;
     		
-    		QuoteData pullBackHigh = Utility.getHigh(quotes, dStart+1, lastbar);
+    		QuoteData pullBackHigh = Utility.getHigh(quotes, dStart+1, lastbar-1);
     		DiverageDAO dv1 = new DiverageDAO(dStart, lastbar);
     		dv1.triggerPrice = quotes[dStart].low;
     		dv1.pullBackSize = pullBackHigh.high - quotes[dStart].low;
     		dv1.pullBackWidth = lastbar - dStart - 1;
-    		if (( dv1.pullBackSize < diverageSize )/* || ( dv1.pullBackWidth > gapMaxWidth )*/)
+    		if ( diverageSize > 0 && dv1.pullBackSize < diverageSize )
     			continue;
-
-    		// n bar before dStart should be lower
-    		//int prevBarsHigh = 2; //dv1.pullBackWidth;   // the bar below should be at least the pullback width
-    		int nBarHigher = 0;
-      		for ( int i = dStart-1; i >=0; i--)
-    			if ( quotes[i].low > quotes[dStart].low)
-    				nBarHigher++;
-    			else
-    				break;
-
-      		if (nBarHigher <= prevBarsHigh ) 
-      			continue;
 
     		return dv1;
     	}
