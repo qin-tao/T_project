@@ -21,7 +21,9 @@ import tao.trading.TradePosition;
 import tao.trading.dao.ConsectiveBars;
 import tao.trading.dao.PushHighLow;
 import tao.trading.dao.PushList;
+import tao.trading.setup.BarTrendBarDTO;
 import tao.trading.setup.BarTrendDetector;
+import tao.trading.setup.HHLLDetector;
 import tao.trading.setup.MABreakOutAndTouch;
 import tao.trading.setup.PushSetup;
 import tao.trading.strategy.TradeManager2;
@@ -149,8 +151,8 @@ public class FirstPullBackAfterBreakOut extends TradeManager2
 		createInstrument( 20, "AUD", "CASH", "IDEALPRO", "NZD", 0.0001, Constants.PRICE_TYPE_4);*/
 	public void process( int req_id, QuoteData data ){
 
-	    //if ( req_id != 500 )  //500
-		 //	 return;
+	    //if ( req_id != 512 )  //500
+		// 	 return;
 		//if (data.time.equals("20170308  05:44:00")){
 		//	System.out.println("here");
 		//}
@@ -168,9 +170,10 @@ public class FirstPullBackAfterBreakOut extends TradeManager2
 						//System.out.println(req_id + " " + data.time);
 						
 						// disable this for manual only
-						//trade = detect2(data);   // production
+						trade = detect2(data);   // production
+						//trade = detect3(data);   
 						
-						trade = detect2_new(data); // newer to isolate 20ma requirement, production  
+						//trade = detect2_new(data); // newer to isolate 20ma requirement, production  
 						//trade = detect2_new_reverse(data); // newer to isolate 20ma requirement, production  
 						
 						
@@ -496,6 +499,21 @@ public class FirstPullBackAfterBreakOut extends TradeManager2
 					fine("entry buy diverage low is" + lowAfterFirstBreakOut.low + " diverage is "+  + diverageSize + "pips,  too large, trade removed");
 					return null;
 				}
+				
+				// last trend check
+				QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
+				HHLLDetector hhllDector = new HHLLDetector(quotesL,PIP_SIZE);
+				hhllDector.sortBars(quotesL,PIP_SIZE);
+				hhllDector.printTrend(quotesL, PIP_SIZE);
+				
+				BarTrendBarDTO[] trends = hhllDector.getTrends();
+				BarTrendBarDTO currentTrend = trends[trends.length-1];
+				BarTrendBarDTO lastTrend = trends[trends.length-2];
+				BarTrendBarDTO prevTrend = trends[trends.length-3];
+				
+				double avgTrendBarSize = BarUtil.averageBarSize(quotesL);
+				if (!( prevTrend.getSize() > avgTrendBarSize * 1.6 ) && ( lastTrend.getSize() < avgTrendBarSize ))
+					return null;
 
 				trade = new Trade(symbol);
 				trade.account = getAccount();
@@ -617,7 +635,23 @@ public class FirstPullBackAfterBreakOut extends TradeManager2
 					//newfine("entry sell diverage low is" + highAfterFirstBreakOut.high + " diverageSize is "+  + diverageSize + "pips,  too large, trade removed");
 					return null;
 				}
-						
+
+				// last trend check
+				QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
+				HHLLDetector hhllDector = new HHLLDetector(quotesL,PIP_SIZE);
+				hhllDector.sortBars(quotesL,PIP_SIZE);
+				hhllDector.printTrend(quotesL, PIP_SIZE);
+				
+				BarTrendBarDTO[] trends = hhllDector.getTrends();
+				BarTrendBarDTO currentTrend = trends[trends.length-1];
+				BarTrendBarDTO lastTrend = trends[trends.length-2];
+				BarTrendBarDTO prevTrend = trends[trends.length-3];
+				
+				double avgTrendBarSize = BarUtil.averageBarSize(quotesL);
+				if (!( prevTrend.getSize() > avgTrendBarSize * 1.6 ) && ( lastTrend.getSize() < avgTrendBarSize ))
+					return null;
+
+				
 				trade = new Trade(symbol);
 				trade.account = getAccount();
 				trade.type = Constants.TRADE_EUR;
@@ -1424,7 +1458,278 @@ public class FirstPullBackAfterBreakOut extends TradeManager2
 		return null;
 	}
 
-	
+
+	public Trade detect3( QuoteData data ){
+		QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
+		int lastbar = quotes.length - 1;
+		double[] ema20 = Indicator.calculateEMA(quotes, 20);
+		
+		QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
+		int lastbarL = quotesL.length - 1;
+		double[] ema20L = Indicator.calculateEMA(quotesL, 20);
+		double[] ema50L = Indicator.calculateEMA(quotesL, 50);
+
+		int prevUpPos, prevDownPos;
+		int lastUpPos = Pattern.findLastPriceConsectiveAboveMA(quotes, ema20, 2);
+		int lastDownPos = Pattern.findLastPriceConsectiveBelowMA(quotes, ema20, 2);
+
+		//QuoteData[] quotesL = getQuoteData(Constants.CHART_240_MIN);// add- on
+		//BarTrendDetector tbddL = new BarTrendDetector(quotesL, PIP_SIZE);// ADD-ON  
+
+		int start = lastbar;
+		if (( lastUpPos > lastDownPos) /*&& ( tbddL.detectTrend() == Constants.DIRECTION_UP )*/){
+			
+			for ( int j = lastbarL; j > lastbarL-15; j--){
+				if (ema20L[j] < ema50L[j])
+					return null;
+			}
+			
+			if (( trade != null ) && ( trade.action.equals(Constants.ACTION_BUY)))
+				return null;
+			
+			int lastUpPosStart = lastUpPos;
+			while ( quotes[lastUpPosStart].low > ema20[lastUpPosStart])
+				lastUpPosStart--;
+			
+			prevDownPos = Pattern.findLastPriceConsectiveBelowMA(quotes, ema20, lastUpPosStart, 2);
+			if ( prevDownPos == Constants.NOT_FOUND )  
+				return null;
+			while ( quotes[prevDownPos-1].low < quotes[prevDownPos].low )
+				prevDownPos--;
+			
+			//added
+			/*
+			int prevDownPeak = Utility.getLow( quotes, prevDownPos-20, prevDownPos).pos;
+			PushList pushList = PushSetup.findPastHighsByX(quotes, prevDownPeak, lastbar, 2);
+			if ((pushList != null ) && ( pushList.phls != null ) && ( pushList.phls.length > 0) ){
+				PushHighLow[] phls = pushList.phls;
+				int numOfPush = phls.length;
+				if ( numOfPush > 2 )
+					return null;
+			}*/
+
+			// first 2 bar above 20ma
+			for ( start = prevDownPos+1; start < lastbar; start++)
+				if (( quotes[start].low > ema20[start]) && ( quotes[start+1].low > ema20[start+1]))
+					break;
+			if ( start == lastbar )
+				return null;
+
+			// check if the trade has triggered before
+			if ( findTradeHistory( Constants.ACTION_BUY, quotes[start].time) != null )
+				return null;
+			
+			// check touch 20MA
+			int touch20MA = 0;
+			for ( int i = start+1 ; i <= lastbar; i++){
+				if ( quotes[i].low <= ema20[i] ){
+					touch20MA = i;
+					break;
+				}
+			}
+			if ( touch20MA == 0 )
+				return null;
+
+			// find first break out
+			QuoteData firstBreakOut = Utility.getHigh( quotes, start, touch20MA-1);
+			if ( firstBreakOut == null )
+				return null;
+
+			for ( int i = touch20MA+1; i < lastbar; i++){
+				if ( quotes[i].high > firstBreakOut.high ){
+					finest("first breakout high missed at " + quotes[i].time);
+					return null;
+				}
+			}
+			
+			
+			double entryPrice = firstBreakOut.high;
+			
+			QuoteData[] quotes5 = getQuoteData(Constants.CHART_5_MIN);
+			int lastbar5 = quotes5.length - 1;
+			if ( ( lastbar5 < 1 ) || quotes5[lastbar5-1].high > entryPrice ){
+				finest("first breakout high missed at " + quotes5[lastbar5-1].time);
+				return null;
+			}
+			
+			if ( data.high > entryPrice ){
+				int firstBreakOutL = firstBreakOut.pos;
+				
+				// added
+				/*
+				int firstBreakOutStarted = firstBreakOutL;
+				while((quotes[firstBreakOutStarted-1].low < quotes[firstBreakOutStarted].low ) || BarUtil.isUpBar(quotes[firstBreakOutStarted-1]))
+					firstBreakOutStarted--;
+				QuoteData lowAfterFirstBreakOut = Utility.getLow( quotes, firstBreakOutL+1, lastbar );
+				if ( lowAfterFirstBreakOut.low < quotes[firstBreakOutStarted].low ){
+					debug("pull back too large too large, trade removed");
+					return null;
+				}*/
+				
+				QuoteData lowAfterFirstBreakOut = Utility.getLow( quotes, firstBreakOutL+1, lastbar );
+				double diverageSize = (entryPrice - lowAfterFirstBreakOut.low)/PIP_SIZE;
+				//System.out.println("PULLBACKSIZE:" + PULLBACK_SIZE + " AVGbarsize:" + BarUtil.averageBarSize(quotes, lastbar-121, lastbar-1)/PIP_SIZE);
+				if (( lowAfterFirstBreakOut != null ) && (diverageSize > getPullBackSize())){
+					fine("entry buy diverage low is" + lowAfterFirstBreakOut.low + " diverage is "+  + diverageSize + "pips,  too large, trade removed");
+					return null;
+				}
+
+				trade = new Trade(symbol);
+				trade.account = getAccount();
+				trade.type = Constants.TRADE_EUR;
+				trade.action = Constants.ACTION_BUY;
+				trade.status = Constants.STATUS_DETECTED;
+				trade.detectTime = quotes[lastbar].time;
+				trade.setFirstBreakOutStartTime(quotes[start].time);
+				trade.setFirstBreakOutTime(firstBreakOut.time);
+				trade.setTouch20MATime(quotes[touch20MA].time);
+				trade.prevDownStart = prevDownPos;
+				trade.entryPrice = trade.triggerPrice = entryPrice;
+				trade.POSITION_SIZE = POSITION_SIZE;
+				info(IB_ACCOUNT + " break UP detected at " + data.time + " start:" + quotes[start].time );
+
+				// check Stochastics
+				/*
+				double[] so = Indicator.calculateStochastics( quotes, 14 );
+				if ( so[firstBreakOut.pos] > ( so[lastbar] + 8 )){
+					removeTrade();
+					return null;
+				}*/
+				
+				enterMarketPosition(trade);
+				//super.strategy.sentTriggerEmail(strategy.getStrategyName() + " " + strategy.IB_PORT + " TRIGGER " + trade.symbol + " " + trade.action + " " + trade.triggerPrice);
+				super.strategy.sentAlertEmail(AlertOption.trigger, trade.symbol + " " + trade.action + " " + trade.triggerPrice, trade);
+				return trade;
+			}
+		}	
+		else if (( lastDownPos > lastUpPos ) /*&& ( tbddL.detectTrend() == Constants.DIRECTION_DOWN )*/){
+			if (( trade != null ) && ( trade.action.equals(Constants.ACTION_SELL)))
+				return null;
+
+			for ( int j = lastbarL; j > lastbarL-15; j--){
+				if (ema20L[j] > ema50L[j])
+					return null;
+			}
+
+			int lastDownPosStart = lastDownPos;
+			while ( quotes[lastDownPosStart].high < ema20[lastDownPosStart])
+				lastDownPosStart--;
+				
+			prevUpPos = Pattern.findLastPriceConsectiveAboveMA(quotes, ema20, lastDownPosStart, 2);
+			if ( prevUpPos == Constants.NOT_FOUND )  
+				return null;
+			while ( quotes[prevUpPos-1].high > quotes[prevUpPos].high )
+				prevUpPos--;
+
+			//added
+			/*
+			int prevUpPeak = Utility.getHigh( quotes, prevUpPos-20, prevUpPos).pos;
+			PushList pushList = PushSetup.findPastLowsByX(quotes, prevUpPeak, lastbar, 2);
+			if ((pushList != null ) && ( pushList.phls != null ) && ( pushList.phls.length > 0) ){
+				PushHighLow[] phls = pushList.phls;
+				int numOfPush = phls.length;
+				if ( numOfPush > 2 )
+					return null;
+			}*/
+			
+			// first 2 bar below 20ma
+			for ( start = prevUpPos+1; start < lastbar; start++)
+				if (( quotes[start].high < ema20[start]) && ( quotes[start+1].high < ema20[start+1]))
+					break;
+			if ( start == lastbar )
+				return null;
+
+			// check if the trade has triggered before
+			if ( findTradeHistory( Constants.ACTION_SELL, quotes[start].time) != null )
+				return null;
+			
+			// check touch 20MA
+			int touch20MA = 0;
+			for ( int i = start+1 ; i <= lastbar; i++){
+				if ( quotes[i].high >= ema20[i]){
+					touch20MA=i;
+					break;
+				}
+			}
+			if ( touch20MA == 0 )
+				return null;
+
+			// find first break out
+			QuoteData firstBreakOut = Utility.getLow( quotes, start, touch20MA-1);
+			if ( firstBreakOut == null )
+				return null;
+			
+			for ( int i = touch20MA+1; i < lastbar; i++){
+				if ( quotes[i].low < firstBreakOut.low ){
+					finest("first breakout low missed at " + quotes[i].time);
+					return null;
+				}
+			}
+
+			double entryPrice = firstBreakOut.low;
+
+			QuoteData[] quotes5 = getQuoteData(Constants.CHART_5_MIN);
+			int lastbar5 = quotes5.length - 1;
+			if (( lastbar5 < 1 ) || ( quotes5[lastbar5-1].low < entryPrice )){
+				finest("first breakout low missed at " + quotes5[lastbar5-1].time);
+				return null;
+			}
+
+			if (data.low < entryPrice ){ 
+				// filter 1:  deep pullbacks
+				int firstBreakOutL = firstBreakOut.pos;
+
+				// added
+				/*
+				int firstBreakOutStarted = firstBreakOutL;
+				while((quotes[firstBreakOutStarted-1].high > quotes[firstBreakOutStarted].high ) || BarUtil.isDownBar(quotes[firstBreakOutStarted-1]))
+					firstBreakOutStarted--;
+				QuoteData highAfterFirstBreakOut = Utility.getHigh( quotes, firstBreakOutL+1, lastbar );
+				if ( highAfterFirstBreakOut.high > quotes[firstBreakOutStarted].high ){
+					debug("pull back too large too large, trade removed");
+					return null;
+				}*/
+
+				
+				QuoteData highAfterFirstBreakOut = Utility.getHigh( quotes, firstBreakOutL+1, lastbar );
+				double diverageSize = (highAfterFirstBreakOut.high - entryPrice)/PIP_SIZE;
+				//System.out.println("PULLBACKSIZE:" + PULLBACK_SIZE + " AVGbarsize:" + BarUtil.averageBarSize(quotes, lastbar-121, lastbar-1)/PIP_SIZE);
+				if (( highAfterFirstBreakOut != null ) && (diverageSize > getPullBackSize())){
+					fine("entry sell diverage low is" + highAfterFirstBreakOut.high + " diverageSize is "+  + diverageSize + "pips,  too large, trade removed");
+					return null;
+				}
+						
+				trade = new Trade(symbol);
+				trade.account = getAccount();
+				trade.type = Constants.TRADE_EUR;
+				trade.action = Constants.ACTION_SELL;
+				trade.status = Constants.STATUS_DETECTED;
+				trade.detectTime = quotes[lastbar].time;
+				trade.setFirstBreakOutStartTime(quotes[start].time);
+				trade.setFirstBreakOutTime(firstBreakOut.time);
+				trade.setTouch20MATime(quotes[touch20MA].time);
+				trade.prevUpStart = prevUpPos;
+				trade.entryPrice = trade.triggerPrice = entryPrice;
+				trade.POSITION_SIZE = POSITION_SIZE;
+				info(IB_ACCOUNT + " break DOWN detected at " + data.time + " start:" + quotes[start].time );
+
+				/*
+				double[] so = Indicator.calculateStochastics( quotes, 14 );
+				if ( so[firstBreakOut.pos] < ( so[lastbar] - 8 )){
+					removeTrade();
+					return null;
+				}*/
+
+				enterMarketPosition(trade);
+				//super.strategy.sentTriggerEmail(strategy.getStrategyName() + " " + strategy.IB_PORT + " TRIGGER " + trade.symbol + " " + trade.action + " " + trade.triggerPrice);
+				super.strategy.sentAlertEmail(AlertOption.trigger, strategy.getStrategyName() + " " + strategy.IB_PORT + " TRIGGER " + trade.symbol + " " + trade.action + " " + trade.triggerPrice,  trade);
+				return trade;
+			}
+		}
+		
+		return null;
+	}
+
 	
 	
 

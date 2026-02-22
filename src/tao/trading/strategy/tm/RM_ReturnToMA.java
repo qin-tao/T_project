@@ -157,7 +157,9 @@ public class RM_ReturnToMA extends TradeManager2
 
 				
 				// pullback to 20MA
-				checkPullBack20_60min(data);  // this one works
+				//checkPullBack20_60min(data);  // this one works
+				checkPullBack20_60min_2(data);
+				
 				//checkPullBack20_60min_2(data); 
 				//checkPullBack20_60min_first_pullback(data);   --> latest
 				//detect_pullback_onMA20_240(data);
@@ -187,49 +189,6 @@ public class RM_ReturnToMA extends TradeManager2
 		}
 	}
 
-	
-
-
-/*
-	public void listAllTradeEvent()
-	{
-		for ( int i = 0; i < TOTAL_SYMBOLS; i++)
-		{
-			Iterator it = tradeManager[i].getTradeHistory().iterator();
-			while ( it.hasNext())
-			{
-				Trade t = (Trade)it.next();
-				
-				Iterator it2 = t.events.iterator();
-				while ( it2.hasNext())
-				{
-					String eventStr = (String)it2.next();
-					System.out.println(eventStr);
-					
-				}
-			}
-		}
-		
-	}*/
-	
-/*
-	public void removeTradeNotUpdated()
-	{
-		for ( int i = 0; i < TOTAL_SYMBOLS; i++)
-		{
-			Trade trade = tradeManager[i].getTrade();
-			String symbol = tradeManager[i].getSymbol();
-			if ((trade != null ) && ( trade.status.equals(Constants.STATUS_PLACED )) && (trade.positionUpdated == false))
-			{
-				LOGGER.warning(symbol + " " +  trade.action + " position did not updated, trade removed");
-				tradeManager[i].setTrade(null);
-			}
-		}
-	}*/
-	
-	
-
-	
 	
 	
 	/***********************************************************************************************************************
@@ -1261,306 +1220,104 @@ public class RM_ReturnToMA extends TradeManager2
 	
 
 
-	public Trade checkPullBack20_60min_2(QuoteData data)
-	{
+	public Trade checkPullBack20_60min_2(QuoteData data){
 		QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
-		QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
 		int lastbar = quotes.length - 1;
 
 		double[] ema20 = Indicator.calculateEMA(quotes, 20);
 		
-		int upPos = Pattern.findLastPriceConsectiveAboveMA(quotes, ema20, 3);
-		int downPos = Pattern.findLastPriceConsectiveBelowMA(quotes, ema20, 3);
-
-		if (downPos > upPos) { 
-			// detected a return to MA
+		if (BarUtil.isDownBar(quotes[lastbar-1]) && quotes[lastbar].low < quotes[lastbar-1].low) { 
 			if (( trade != null ) && ( Constants.ACTION_SELL.equals(trade.action)))
 				return trade;
 
-			if (downPos < lastbar-1)
+			int downPos = Pattern.findLastPriceConsectiveBelowMA2(quotes, ema20, lastbar, 5 );
+			
+			if ( downPos == lastbar )
+				return null;	// last not touched yet
+			
+			int above = 0;
+			for ( int i = downPos +1; i <= lastbar; i++){
+				if ( quotes[i].low > ema20[i])
+					above++;
+			}
+			if ( above > 1)
 				return null;
 
-			// detect first pullback
-			int downPos_start = downPos;
-			while( quotes[downPos_start-1].high < ema20[downPos_start-1])
-				downPos_start--;
-			//if (downPos - downPos_start > 24 )
-			//	return null;
-			int upPos_before = Pattern.findLastPriceConsectiveAboveMA(quotes, ema20,downPos_start, 2);
-			int downPos_before = Pattern.findLastPriceConsectiveBelowMA(quotes, ema20,downPos_start, 2);
-
-			if ( downPos_before > upPos_before) // not to look for second return
+			if ( findTradeHistory( Constants.ACTION_SELL, quotes[downPos].time) != null )
 				return null;
 			
-			int pullback_start = Utility.getLow( quotes, upPos_before, downPos).pos;
+			double triggerPrice = quotes[lastbar-1].low;
+			createOpenTrade(Constants.TRADE_RM, Constants.ACTION_SELL);
+			trade.status = Constants.STATUS_DETECTED;
+			trade.detectTime = quotes[lastbar].time;
+			trade.detectPrice = triggerPrice;
+			trade.setFirstBreakOutStartTime(quotes[downPos].time);// for history lookup only
+			trade.pullBackStartTime = quotes[downPos].time;
 
-			
-			//if (!(SimplePullback.detect(super.symbol,quotesL) == Constants.DIRECTION_DOWN ))
-			//	return null;
-			
-			
-			if (data.high >= ema20[lastbar] ){
-				double triggerPrice = ema20[lastbar];
-				QuoteData[] quotes5 = getQuoteData(Constants.CHART_5_MIN);
-				int lastbar5 = quotes5.length - 1;
-				if ( quotes5[lastbar5-1].high > triggerPrice )
-					return null; 
+			if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
+				super.strategy.addStrategyTrigger(trade.symbol + " " + trade.detectTime + " " + trade.action );
+				super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " ATD60 " + trade.action + " " + trade.detectPrice, trade);
+			}
 
-				if ( findTradeHistory( Constants.ACTION_SELL, quotes[pullback_start].time) != null )
-					return null;
-				
-				createOpenTrade(Constants.TRADE_RM, Constants.ACTION_SELL);
-				trade.status = Constants.STATUS_DETECTED;
-				trade.detectTime = quotes[lastbar].time;
-				trade.detectPrice = data.close;
-				trade.setFirstBreakOutStartTime(quotes[pullback_start].time);// for history lookup only
-				trade.pullBackStartTime = quotes[downPos].time;
-
-				if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
-					super.strategy.addStrategyTrigger(trade.symbol + " " + trade.detectTime + " " + trade.action );
-					super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " ATD60 " + trade.action + " " + trade.detectPrice, trade);
-				}
-
-				//enter right away, or skip for alert only
-				if (!(MODE == Constants.SIGNAL_MODE)) {
-					enterMarketPosition(triggerPrice);
-					return trade;
-				}
+			//enter right away, or skip for alert only
+			if (!(MODE == Constants.SIGNAL_MODE)) {
+				enterMarketPosition(triggerPrice);
+				return trade;
 			}
 		}
-		else if (upPos > downPos) { 
+		else if (BarUtil.isUpBar(quotes[lastbar-1]) && quotes[lastbar].high > quotes[lastbar-1].high) { 
 			// detected a return to MA
 			if (( trade != null ) && ( Constants.ACTION_BUY.equals(trade.action)))
 				return trade;
 
-			if (upPos < lastbar-1)
-			//if (!(upPos + 1 <= lastbar))
-				return null;
+			int upPos = Pattern.findLastPriceConsectiveAboveMA2(quotes, ema20, lastbar, 5);
 			
-			// detect first pullback
-			int upPos_start = upPos;
-			while( quotes[upPos_start-1].low > ema20[upPos_start-1])
-				upPos_start--;
-			//if (upPos - upPos_start > 24 )
-			//	return null;
-			int downPos_before = Pattern.findLastPriceConsectiveBelowMA(quotes, ema20,upPos_start, 2);
-			int upPos_before = Pattern.findLastPriceConsectiveAboveMA(quotes, ema20,upPos_start, 2);
-
-			if ( upPos_before > downPos_before )
+			if ( upPos == lastbar )
+				return null;	// last not touched yet
+			
+			int above = 0;
+			for ( int i = upPos +1; i <= lastbar; i++){
+				if ( quotes[i].low < ema20[i])
+					above++;
+			}
+			if ( above > 1)
 				return null;
 
-			int pullback_start = Utility.getHigh( quotes, downPos_before, upPos).pos;
-
-			//if (!(SimplePullback.detect(super.symbol,quotesL) == Constants.DIRECTION_UP ))
-			//	return null;
+			if ( findTradeHistory( Constants.ACTION_SELL, quotes[upPos].time) != null )
+				return null;
 			
-			if (data.low <= ema20[lastbar] ){
-				double triggerPrice = ema20[lastbar];
+			double triggerPrice = quotes[lastbar-1].high;
 
-				QuoteData[] quotes5 = getQuoteData(Constants.CHART_5_MIN);
-				int lastbar5 = quotes5.length - 1;
-				if ( quotes5[lastbar5-1].low < triggerPrice)
-					return null; 
+			createOpenTrade(Constants.TRADE_RM, Constants.ACTION_BUY);
+			trade.status = Constants.STATUS_DETECTED;
+			trade.detectTime = quotes[lastbar].time;
+			trade.detectPrice = triggerPrice;
+			trade.setFirstBreakOutStartTime(quotes[upPos].time);// for history lookup only
+			trade.pullBackStartTime = quotes[upPos].time;
 
-				if ( findTradeHistory( Constants.ACTION_BUY, quotes[pullback_start].time) != null )
-					return null;
-				
-				createOpenTrade(Constants.TRADE_RM, Constants.ACTION_BUY);
-				trade.status = Constants.STATUS_DETECTED;
-				trade.detectTime = quotes[lastbar].time;
-				trade.detectPrice = data.close;
-				trade.setFirstBreakOutStartTime(quotes[pullback_start].time);// for history lookup only
-				trade.pullBackStartTime = quotes[upPos].time;
+			if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
+				super.strategy.addStrategyTrigger(trade.symbol + " " + trade.detectTime + " " + trade.action );
+				super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " ATD60 " + trade.action + " " + trade.detectPrice, trade);
+			}
 
-				if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
-					super.strategy.addStrategyTrigger(trade.symbol + " " + trade.detectTime + " " + trade.action );
-					super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " ATD60 " + trade.action + " " + trade.detectPrice, trade);
-				}
-
-				//enter right away, or skip for alert only
-				if (!(MODE == Constants.SIGNAL_MODE)) {
-					enterMarketPosition(triggerPrice);
-					return trade;
-				}
+			//enter right away, or skip for alert only
+			if (!(MODE == Constants.SIGNAL_MODE)) {
+				enterMarketPosition(triggerPrice);
+				return trade;
 			}
 		}
+
 		return null;
 	}
 
 	
 	
 	
-	
-
-	
-	public Trade checkPullBack20_60min_first_pullback(QuoteData data){
-
-		QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
-		int lastbar = quotes.length - 1;
-
-		double[] ema20 = Indicator.calculateEMA(quotes, 20);
-		
-		int upPos = Pattern.findLastPriceConsectiveAboveMA(quotes, ema20, 5);
-		int downPos = Pattern.findLastPriceConsectiveBelowMA(quotes, ema20, 5);
-
-		double avgBarSize = BarUtil.averageBarSize(quotes);
-
-		if (downPos > upPos) { 
-			if (( trade != null ) && ( Constants.ACTION_SELL.equals(trade.action)))
-				return trade;
-
-			if (!(downPos + 1 <= lastbar))
-				return null;
-
-			for ( int i = downPos +1; i < lastbar-1; i++)
-				if (( quotes[i].low > ema20[i] )||( quotes[i].high < ema20[i] )) 
-					return null;
-			
-			if (!(BarUtil.isDownBar(quotes[lastbar-1]) && (BarUtil.barSize(quotes[lastbar-1]) > 3 * avgBarSize ) && ((lastbar-1)>= downPos)) && ( lastbar-1 <= downPos +2 ))
-				return null;
-			
-			int lastDownPosStart = downPos;
-			while ( quotes[lastDownPosStart].high < ema20[lastDownPosStart])
-				lastDownPosStart--;
-			if (( downPos - lastDownPosStart < 8 ) || ( downPos - lastDownPosStart > 30 ))
-				return null;
-			
-			if ((Math.abs(ema20[lastDownPosStart]- ema20[downPos+1])) < FIXED_STOP * PIP_SIZE /3 )
-				return null;
-			
-			
-			if (data.low < quotes[lastbar-1].low ){
-				double triggerPrice = quotes[lastbar-1].low;
-				QuoteData[] quotes5 = getQuoteData(Constants.CHART_5_MIN);
-				int lastbar5 = quotes5.length - 1;
-				if ( quotes5[lastbar5-1].low < triggerPrice )
-					return null; 
-
-				if ( findTradeHistory( Constants.ACTION_SELL, quotes[downPos].time) != null )
-					return null;
-				
-				createOpenTrade(Constants.TRADE_RM, Constants.ACTION_SELL);
-				trade.status = Constants.STATUS_DETECTED;
-				trade.detectTime = quotes[lastbar].time;
-				trade.detectPrice = data.close;
-				trade.setFirstBreakOutStartTime(quotes[downPos].time);// for history lookup only
-				trade.pullBackStartTime = quotes[downPos].time;
-
-				TradeEvent tv = new TradeEvent(TradeEvent.TRADE_DETECTED, quotes[lastbar].time);
-				tv.addNameValue("Detected", Double.toString(trade.detectPrice));
-				trade.addTradeEvent(tv);
-				
-				if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
-					super.strategy.addStrategyTrigger(trade.symbol + " " + trade.detectTime + " " + trade.action );
-					super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " ATD60 " + trade.action + " " + trade.detectPrice, trade);
-				}
-
-				//enter right away
-				System.out.println(trade.symbol + " " + trade.detectTime + " " + trade.action + " attach pos" + quotes[downPos +1].time + " " + ema20[upPos+1] 
-						+ " breakoutbar:"+ quotes[lastbar-1].time + " " + quotes[lastbar-1].low);
-				
-				if (MODE == Constants.SIGNAL_MODE){
-					removeTrade();
-					return null;
-				}else{
-					enterMarketPosition(triggerPrice);
-					return trade;
-				}
-			}
-		}
-		else if (upPos > downPos) { 
-			// detect first pullback
-			/*int upPos_start = upPos;
-			while( quotes[upPos_start-1].low > ema20[upPos_start-1])
-				upPos_start--;
-			int upPos_before = Pattern.findLastPriceConsectiveAboveMA(quotes, ema20,upPos_start, 3);
-			int downPos_before = Pattern.findLastPriceConsectiveBelowMA(quotes, ema20,upPos_start, 3);
-
-			if ( upPos_before > downPos_before )
-				return null;
-*/
-			
-			
-			// detected a return to MA
-			if (( trade != null ) && ( Constants.ACTION_BUY.equals(trade.action)))
-				return trade;
-
-			if (!(upPos + 1 <= lastbar))
-				return null;
-			
-			for ( int i = upPos +1; i < lastbar-1; i++)
-				if (( quotes[i].low > ema20[i] )||( quotes[i].high < ema20[i] )) 
-					return null;
-
-			if (!(BarUtil.isUpBar(quotes[lastbar-1] )&& (BarUtil.barSize(quotes[lastbar-1]) > 3 * avgBarSize ) && ( lastbar-1 >= upPos)) && ( lastbar-1 <= upPos+2 ))
-				return null;
-			
-			int lastUpPosStart = upPos;
-			while ( quotes[lastUpPosStart].low > ema20[lastUpPosStart])
-				lastUpPosStart--;
-			if (( upPos - lastUpPosStart < 8 ) || ( upPos - lastUpPosStart > 30 ))
-				return null;
-			if ((Math.abs(ema20[lastUpPosStart]- ema20[upPos+1])) < FIXED_STOP * PIP_SIZE /3 )
-				return null;
-			
-			
-			if (data.high > quotes[lastbar-1].high ){
-				double triggerPrice = quotes[lastbar-1].high;
-				QuoteData[] quotes5 = getQuoteData(Constants.CHART_5_MIN);
-				int lastbar5 = quotes5.length - 1;
-				if ( quotes5[lastbar5-1].high > triggerPrice)
-					return null; 
-
-				if ( findTradeHistory( Constants.ACTION_BUY, quotes[upPos].time) != null )
-					return null;
-				
-				createOpenTrade(Constants.TRADE_RM, Constants.ACTION_BUY);
-				trade.status = Constants.STATUS_DETECTED;
-				trade.detectTime = quotes[lastbar].time;
-				trade.detectPrice = data.close;
-				trade.setFirstBreakOutStartTime(quotes[upPos].time);// for history lookup only
-				trade.pullBackStartTime = quotes[upPos].time;
-
-				TradeEvent tv = new TradeEvent(TradeEvent.TRADE_DETECTED, quotes[lastbar].time);
-				tv.addNameValue("Detected", Double.toString(trade.detectPrice));
-				trade.addTradeEvent(tv);
-				
-				if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
-					super.strategy.addStrategyTrigger(trade.symbol + " " + trade.detectTime + " " + trade.action );
-					super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " ATD60 " + trade.action + " " + trade.detectPrice, trade);
-				}
-
-				//enter right away
-				if (MODE == Constants.SIGNAL_MODE){
-					removeTrade();
-					return null;
-				}else{
-					enterMarketPosition(triggerPrice);
-					return trade;
-				}
-			}
-		}
-		
-		return null;
-	
-	}
-
-	
-	
-	
-
-	
-	
-	
-
-  
 	public Trade detect( QuoteData data )
 	{
 		return null;
 	}
 
-	
-	
 	
 	public void entry( QuoteData data )
 	{

@@ -142,8 +142,11 @@ public class RV_Diverage extends TradeManager2 {
 				//checkDiverageSignal_givenBigTrend(data); // latest <----
 				
 				//checkDiverageSignal_20250212(data);  // 
-				//checkDiverageSignal_20250527(data);  // 
-				checkDiverageSignal_20260118(data);
+				//checkDiverageSignal_20250527(data);  /
+				QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
+				checkDiverageSignal_20260118(data, quotes, "HOURLY", 48);
+				QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
+				checkDiverageSignal_20260118(data, quotesL, "DAILY", 24);
 				
 
 				// checkDiverageSignal_narrow_breakout(data);
@@ -1610,8 +1613,8 @@ public class RV_Diverage extends TradeManager2 {
 		BarTrendBarDTO previousTrend = trends[trends.length-2];
 		BarTrendBarDTO ppTrend = trends[trends.length-3];
 
-		if (lastTrend.getSize(PIP_SIZE) < avgBarSizeL * 2)
-			return null;
+		//if (lastTrend.getSize(PIP_SIZE) < avgBarSizeL * 2)
+		//	return null;
 		
 		if ( lastTrend.direction == Constants.DIRECTION_DOWN ) {
 			if (BarUtil.isUpBar(quotes[lastbar]) && (quotes[lastbar].high >= ema20[lastbar])) {
@@ -1815,23 +1818,11 @@ public class RV_Diverage extends TradeManager2 {
 
 
 	
-	public Trade checkDiverageSignal_20260118(QuoteData data){ 
-		QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
+	public Trade checkDiverageSignal_20260118(QuoteData data, QuoteData[] quotes, String time_frame, int gapDiverageWidth){ 
 		int lastbar = quotes.length - 1;
 		double[] ema = Indicator.calculateEMA(quotes, 20);
 
 		int nbarLow = 2; 			// the number of bars lower before the last nigh
-		int gapDiverageWidth = 48; 	// max gap width
-		
-		QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
-		int lastbarL = quotesL.length - 1;
-		double[] emaL20 = Indicator.calculateEMA(quotesL, 20);
-		int avgBarSize = (int)(BarUtil.averageBarSize(quotesL)/PIP_SIZE);
-		
-		if ( processedBar.contains(quotes[lastbar-1].time))
-			return null;
-		else 
-			processedBar.add(quotes[lastbar-1].time);
 		
 		if ((quotes[lastbar].low >= ema[lastbar])) {
 			for (int i = lastbar - 4; i >= lastbar - gapDiverageWidth; i--) {
@@ -1853,8 +1844,8 @@ public class RV_Diverage extends TradeManager2 {
 						}
 					}
 
-					String detectDetail = "Prev High: " + quotes[dv.prePos].time + " " + quotes[dv.prePos].high + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
-					warning(symbol + " SELL detected " + data.time + detectDetail);
+					String detectDetail = "Prev High:" + quotes[dv.prePos].high + " " + quotes[dv.prePos].time + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
+					//warning(symbol + " SELL detected " + data.time + detectDetail);
 
 					createOpenTrade(Constants.TRADE_RV, Constants.ACTION_SELL);
 					trade.status = Constants.STATUS_DETECTED;
@@ -1867,7 +1858,7 @@ public class RV_Diverage extends TradeManager2 {
 
 					if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
 						super.strategy.addStrategyTrigger( trade.symbol + " " + trade.detectTime + " " + trade.action + " " + triggerPrice);
-						super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " chart:" + Constants.CHART_60_MIN + " " + trade.action + " " + triggerPrice, trade);
+						super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " " + time_frame + " " + trade.action + " " + triggerPrice, trade);
 					}
 							 
 					if (MODE == Constants.SIGNAL_MODE) {
@@ -1881,7 +1872,7 @@ public class RV_Diverage extends TradeManager2 {
 			}
 		} else if (quotes[lastbar].high < ema[lastbar]) {
 			for (int i = lastbar - 4; i >= lastbar - gapDiverageWidth; i--) {
-				DiverageDAO dv = DiverageSetup.findLastDiverageHighClosest(quotes, i, lastbar, 0 );  
+				DiverageDAO dv = DiverageSetup.findLastDiverageLowClosest(quotes, i, lastbar, 0 );  
 				if (dv != null) {
 					if ( quotes[lastbar-1].close < dv.triggerPrice )
 						return null;
@@ -1899,22 +1890,22 @@ public class RV_Diverage extends TradeManager2 {
 						}
 					}
 
-					String detectDetail = "Prev Low: " + quotes[dv.prePos].time + " " + quotes[dv.prePos].low + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
-					warning(symbol + " BUY detected " + data.time + detectDetail);
+					String detectDetail = "Prev Low:" + quotes[dv.prePos].low + " " + quotes[dv.prePos].time + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
+					//warning(symbol + " BUY detected " + data.time + detectDetail);
 
 					createOpenTrade(Constants.TRADE_RV, Constants.ACTION_BUY);
 					trade.status = Constants.STATUS_DETECTED;
-					trade.detectTime = quotes[lastbar].time;
-					trade.setFirstBreakOutStartTime(quotes[dv.prePos].time);// for history lookup only
 
 					TradeEvent tv = new TradeEvent(TradeEvent.TRADE_DETECTED, quotes[lastbar].time);
 					tv.addNameValue("Detected", detectDetail);
+					tv.addNameValue("Previous Low", Double.toString(quotes[dv.prePos].low));
+					tv.addNameValue("Previous Low Time", quotes[dv.prePos].time);
 					trade.addTradeEvent(tv);
 
 					triggerPrice = quotes[dv.prePos].low;
 					if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
 						super.strategy.addStrategyTrigger( trade.symbol + " " + trade.detectTime + " " + trade.action + " " + triggerPrice);
-						super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " chart:" + Constants.CHART_60_MIN + " " + trade.action + " " + triggerPrice, trade);
+						super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " " + time_frame + " " + trade.action + " " + triggerPrice, trade);
 					}
 
 					if (MODE == Constants.SIGNAL_MODE) {
@@ -2582,6 +2573,7 @@ public class RV_Diverage extends TradeManager2 {
 				return trade;
 			}
 		}
+
 		return null;
 	}
 

@@ -58,7 +58,7 @@ public class Strategy
 	public String[] TRADING_ACCOUNTS;
 	public Set<Integer> TRADING_SYMBOLS = new HashSet<Integer>();
 
-	int TOTAL_SYMBOLS=0;//22
+	int TOTAL_SYMBOLS = 0;
 
 	public int mode;
 	public TradeManager2[] tradeManager;
@@ -93,12 +93,8 @@ public class Strategy
 		TradeManager2[] tradeManagerNew = null;
 
 		try{
-			if (STRATEGY_NAME.equals("RM"))
-	    	{		
+			if (STRATEGY_NAME.equals("RM")){
 				RM_ReturnToMA.OUTPUT_DIR = outPutDir;
-				//TRADING_SYMBOLS = new HashSet<Integer>(Arrays.asList(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21));
-				//TRADING_SYMBOLS = new HashSet<Integer>(Arrays.asList(1,4,12,16,20));  this is what works
-				//TRADING_SYMBOLS = new HashSet<Integer>(Arrays.asList(4,12,16,20));   // this is to work with others
 				TRADING_SYMBOLS = new HashSet<Integer>(Arrays.asList(0,1,6,9,12,14,15,19));
 				String symbolsInSetting = env_setting.getStrategySymbol(STRATEGY_NAME);
 				if (symbolsInSetting != null){
@@ -111,17 +107,13 @@ public class Strategy
 				logger.info(STRATEGY_NAME + " symbols are: " + TRADING_SYMBOLS.toString());
 				
 	    		int lot_size[] = new int[]{100000,100000,100000,65000,92000,100000,100000,80000,80000,80000,80000,80000,68000,120000,86000,100000,100000,77160,94000,94000,94000,94000};
-	         	int stop_size[] =     new int[]{27,29,30,29,31,30,29,32,32,34,32,32,36,36,25,39,39,37,32,32,32,32};
+	         	int stop_size[] = new int[]{27,29,30,29,31,30,29,32,32,34,32,32,36,36,25,39,39,37,32,32,32,32};
 	         	
 				String accounts = env_setting.getStragetyAccounts(STRATEGY_NAME);
 				String[] tokens = accounts.split(",");
 				int numOfAccounts = tokens.length/2;
 				logger.config(STRATEGY_NAME + " number of accounts: " + numOfAccounts);
 
-				//triggerEmail = env_setting.getStrategyTriggerEmail(STRATEGY_NAME);
-				//detectEmail = env_setting.getStrategyDetectEmail(STRATEGY_NAME);
-				//logger.info(STRATEGY_NAME + " trigger email : " + triggerEmail);
-				//logger.info(STRATEGY_NAME + " detect email : " + detectEmail);
 				alertEmail = env_setting.getStrategyEmail(STRATEGY_NAME);
 				emailAlerts = env_setting.getStrategyEmailAlerts(STRATEGY_NAME);
 				logger.info(STRATEGY_NAME + " email: " + alertEmail);
@@ -220,7 +212,7 @@ public class Strategy
 				logger.info(STRATEGY_NAME + " symbols are: " + TRADING_SYMBOLS);
 				
 	    		int lot_size[] = new int[]{100000,100000,100000,65000,92000,100000,100000,80000,80000,80000,80000,80000,68000,120000,86000,100000,100000,77160,94000,94000,94000,94000};
-	         	int stop_size[] =     new int[]{27,28,27,29,29,28,29,30,32,34,30,31,34,33,24,37,38,35,32,35,29,33};
+	         	int stop_size[] = new int[]{27,28,27,29,29,28,29,30,32,34,30,31,34,33,24,37,38,35,32,35,29,33};
                 //                              0   1  2  3  4  5  6  7  8  9  0  1  2  3  4  5  6  7  8  9  0 // 514         518 
 	         	//                                              ?  ?
 				String accounts = env_setting.getStragetyAccounts(STRATEGY_NAME);
@@ -262,9 +254,6 @@ public class Strategy
  
 	         	MC_Momentum.OUTPUT_DIR = outPutDir;
 				TRADING_SYMBOLS = new HashSet<Integer>(Arrays.asList(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21));
-				//TRADING_SYMBOLS = new HashSet<Integer>(Arrays.asList(1,5,6));
-				// eur.jpy, eur.nzd, eur.aud  only these 3 works well
-				//TRADING_SYMBOLS = new HashSet<Integer>(Arrays.asList(5));
 				if (env_setting.getStrategySymbol(STRATEGY_NAME) != null){
 					String[] symbols = env_setting.getStrategySymbol(STRATEGY_NAME).split(",");
 					TRADING_SYMBOLS = new HashSet<Integer>();
@@ -307,35 +296,53 @@ public class Strategy
 	    	}
 	    	else if ( STRATEGY_NAME.equals("MA")){
 	         	MA_Manual.OUTPUT_DIR = outPutDir;
+
+				TRADING_SYMBOLS = new HashSet<Integer>(Arrays.asList(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,21));
+				String symbolsInSetting = env_setting.getStrategySymbol(STRATEGY_NAME);
+				if (symbolsInSetting != null){
+					String[] symbols = symbolsInSetting.split(",");
+					TRADING_SYMBOLS = new HashSet<Integer>();
+					for ( int i = 0; i < symbols.length; i++ ){
+						TRADING_SYMBOLS.add(Integer.parseInt(symbols[i]));
+					}	
+				}
+				logger.info(STRATEGY_NAME + " symbols are: " + TRADING_SYMBOLS.toString());
 				
-				// Override stop stop size
-				// account info
+	    		int lot_size[] = new int[]{100000,100000,100000,65000,92000,100000,100000,80000,80000,80000,80000,80000,68000,120000,86000,100000,100000,77160,94000,94000,94000,100};
+	         	int stop_size[] = new int[]{27,29,30,29,31,30,29,32,32,34,32,32,36,36,25,39,39,37,32,32,32,100};
+	         	
 				String accounts = env_setting.getStragetyAccounts(STRATEGY_NAME);
 				String[] tokens = accounts.split(",");
 				int numOfAccounts = tokens.length/2;
-				logger.info(STRATEGY_NAME + " number of accounts: " + numOfAccounts);
+				logger.config(STRATEGY_NAME + " number of accounts: " + numOfAccounts);
 
 				alertEmail = env_setting.getStrategyEmail(STRATEGY_NAME);
 				emailAlerts = env_setting.getStrategyEmailAlerts(STRATEGY_NAME);
-				
-				logger.info(STRATEGY_NAME + " email:" + alertEmail + " email alerts:" + emailAlerts + " pauseTrading:" + pauseTrading);
-				
-				tradeManagerNew = new MA_Manual[sftest.ALL_SYMBOLS * numOfAccounts];
-				System.out.println("MA initialized: " + sftest.ALL_SYMBOLS * numOfAccounts);
-				int lot_size[] = new int[]{100000,100000,100000,65000,92000,100000,100000,80000,80000,80000,80000,80000,68000,120000,86000,100000,100000,77160,94000,94000,94000,94000,1000};
+				logger.info(STRATEGY_NAME + " email: " + alertEmail);
+				logger.info(STRATEGY_NAME + " email alerts : " + emailAlerts);
+
+				tradeManagerNew = new MA_Manual[TOTAL_SYMBOLS * numOfAccounts];
 				
 				for (int j = 0; j < numOfAccounts; j++){
 					String ib_account = tokens[j*2];
 					Double exp = new Double(tokens[j*2 + 1]);
 
 					sftest.addAccount(ib_account);
-					logger.info(STRATEGY_NAME + " account:" + ib_account + " exp:" + exp);
+					System.out.println(STRATEGY_NAME + " account:" + ib_account + " exp:" + exp);
 				
-		    		for ( int i = 0; i < sftest.ALL_SYMBOLS; i++ ){ 
-		    			tradeManagerNew[j*sftest.ALL_SYMBOLS + i]  = new MA_Manual(ib_account, m_client, 0,  instruments[i], this, exchangeRate );
-		    			((MA_Manual)tradeManagerNew[j*sftest.ALL_SYMBOLS + i]).setPositionSize((int)(lot_size[i]*exp));
+		    		for ( int i = 0; i < TOTAL_SYMBOLS; i++ ){ 
+		    			tradeManagerNew[j*TOTAL_SYMBOLS + i]  = new MA_Manual(ib_account, m_client, 0,  instruments[i], this, exchangeRate );  
+		    			((MA_Manual)tradeManagerNew[j*TOTAL_SYMBOLS + i]).setPositionSize((int)(lot_size[i]*exp));
+		    			((MA_Manual)tradeManagerNew[j*TOTAL_SYMBOLS + i]).setStopSize(stop_size[i]); 
+		    			
+	    				if ( parm1 != null ) {
+		    	    	    int parm = new Integer(parm1);
+			    			((MA_Manual)tradeManagerNew[j*TOTAL_SYMBOLS + i]).setStopSize(stop_size[i] + parm );
+			    			tradeManagerNew[j*TOTAL_SYMBOLS + i].parm1 = parm;
+	    				}
 		    		}
 				}
+
 	    	}
 	    	else if ( STRATEGY_NAME.equals("BO")){
 
@@ -660,17 +667,7 @@ public class Strategy
 				logger.info(STRATEGY_NAME + " target trade:" + cmd.getSymbol() + " " + cmd.getPrice());
 				for ( int i = 0; i < tradeManager.length; i++){
 					if (cmd.getSymbol().equalsIgnoreCase(tradeManager[i].getSymbol()) && ( tradeManager[i].getTrade() != null)){
-
-						if ((Constants.ACTION_BUY.equals(tradeManager[i].getTrade().action )) && ( cmd.getPrice() < tradeManager[i].getInstrument().getLastQuote().close - tradeManager[i].getPIP_SIZE() * 10)){
-							logger.warning(STRATEGY_NAME  + " trade is buy but the target is below current close, check target price");
-							return;
-						}
-						else if ((Constants.ACTION_SELL.equals(tradeManager[i].getTrade().action )) && ( cmd.getPrice() > tradeManager[i].getInstrument().getLastQuote().close + tradeManager[i].getPIP_SIZE() * 10)){
-							logger.warning(STRATEGY_NAME  + " trade is sell but the target above current close, check target price");
-							return;
-						}
-						
-						logger.info(STRATEGY_NAME + tradeManager[i].getAccount() + " " + tradeManager[i].getSymbol() + " set target " + cmd.getPrice());
+						logger.info(STRATEGY_NAME + " trade found: " + tradeManager[i].getAccount() + " " + tradeManager[i].getSymbol() + " set target " + cmd.getPrice());
 		        		tradeManager[i].createTradeTargetOrder((int)(cmd.getQuantity()*tradeManager[i].getPOSITION_SIZE()), cmd.getPrice() );
 					}
 				}

@@ -626,6 +626,39 @@ public class Pattern
 	}
 	
 
+	static public int findLastPriceConsectiveBelowMA2( QuoteData[] quotes, double[] ema, int lastbar, int minBars){
+		for ( int i = lastbar; i > minBars; i-- ){
+			boolean touched = false;
+			for ( int j = 0; j < minBars; j++ ){
+				if (quotes[i-j].high >= ema[i-j]){
+					touched = true;
+					break;
+				}
+			}
+		
+			if ( touched == false )
+				return i;
+		}
+		return Constants.NOT_FOUND;
+	}
+
+
+	static public int findLastPriceConsectiveAboveMA2( QuoteData[] quotes, double[] ema, int lastbar, int minBars){
+		for ( int i = lastbar; i > minBars; i-- ){
+			boolean touched = false;
+			for ( int j = 0; j < minBars; j++ ){
+				if (quotes[i-j].low <= ema[i-j]){
+					touched = true;
+					break;
+				}
+			}
+			if ( touched == false )
+				return i;
+		}
+		return Constants.NOT_FOUND;
+	}
+
+	
 	
 	static public int findLastPriceOpenCloseAboveMA( QuoteData[] quotes, double[] ema, int lastbar, int minBars)
 	{

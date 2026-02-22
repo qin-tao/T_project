@@ -284,7 +284,7 @@ public class DiverageSetup {
 			start = 2;
 
 		int dStart = lastbar - 1;
-    	while( --dStart >= start ){
+    	loop: while( --dStart >= start ){
     		// dStart should be lower than the lastbar
     		if ( quotes[dStart].high > quotes[lastbar].high )
     			return null;// not the highest
@@ -294,9 +294,11 @@ public class DiverageSetup {
     		if ( lastHigh.high > quotes[dStart].high )
     			continue;
     		if ( lastHigh.high > quotes[lastbar].high )
-    			continue;  // other high in the middle
-    		if (!( quotes[dStart-1].high < quotes[dStart].high && quotes[dStart-2].high < quotes[dStart].high && quotes[dStart-3].high < quotes[dStart].high))
-    			continue;
+    			continue;  
+    		int totalHighBefore= 5;
+    		for ( int i = 1; i <= totalHighBefore; i++)
+    			if ( quotes[dStart-i].high > quotes[dStart].high )
+    				continue loop;
     		
     		//System.out.println("high found at " + quotes[dStart].time + " " + quotes[dStart].high + " " + quotes[lastbar].time + " " + quotes[lastbar].high);
     		//if ("20241124  18:00:00".equals(quotes[dStart].time ))
@@ -327,7 +329,7 @@ public class DiverageSetup {
 			start = 2;
 		
     	int dStart = lastbar - 1;
-    	while ( --dStart >= start ){
+    	loop: while ( --dStart >= start ){
     		// dStart should be lower than the lastbar
     		if ( quotes[dStart].low < quotes[lastbar].low )
     			return null;  // not the lowest;
@@ -338,8 +340,12 @@ public class DiverageSetup {
     			continue;
     		if ( lastLow.low < quotes[lastbar].low )
     			continue;  // other low in the middle
-    		if (!( quotes[dStart-1].low > quotes[dStart].low && quotes[dStart-2].low > quotes[dStart].low && quotes[dStart-3].low > quotes[dStart].low))
-    			continue;
+    		int totalLowBefore= 5;
+    		for ( int i = 1; i <= totalLowBefore; i++)
+    			if ( quotes[dStart-i].low < quotes[dStart].low )
+    				continue loop;
+    		//if (!( quotes[dStart-1].low > quotes[dStart].low && quotes[dStart-2].low > quotes[dStart].low && quotes[dStart-3].low > quotes[dStart].low))
+    		//	continue;
     		
     		QuoteData pullBackHigh = Utility.getHigh(quotes, dStart+1, lastbar-1);
     		DiverageDAO dv1 = new DiverageDAO(dStart, lastbar);

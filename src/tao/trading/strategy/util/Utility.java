@@ -130,70 +130,25 @@ public class Utility
 	}
 
 	
-	static public QuoteData getHigh(Object[] quotes, int startPos, int endPos )
-	{
-		if ((endPos == 0 )  || ( endPos < startPos))
-			return null;
-		
-		QuoteData high = new QuoteData();
-		high.high = ((QuoteData)quotes[startPos]).high;
-		high.pos = startPos;
-		high.time = ((QuoteData)quotes[startPos]).time;
-
-		for ( int i = startPos; i <= endPos; i++ )
-		{
-			if (((QuoteData)quotes[i]).high > high.high)
-			{
-				high.high = ((QuoteData)quotes[i]).high;
-				high.low = ((QuoteData)quotes[i]).low;
-				high.pos = i;
-				high.time = ((QuoteData)quotes[i]).time;
+	static public QuoteData getHigh(QuoteData[] quotes, int startPos, int endPos ){
+		int highPos = startPos;
+		for ( int i = startPos+1; i <= endPos; i ++ ){
+			if (quotes[i].high < quotes[highPos].high){
+				highPos = i;
 			}
 		}
-		
-		return high;
-		
-	}
-
-	static public QuoteData getLow(Object[] quotes, int startPos, int endPos )
-	{
-		if ((endPos == 0 )  || ( endPos < startPos))
-			return null;
-
-		QuoteData low = new QuoteData();
-		low.low = ((QuoteData)quotes[startPos]).low ; 
-		low.pos = startPos;
-		low.time = ((QuoteData)quotes[startPos]).time;
-		
-		for ( int i = startPos; i <= endPos; i++ )
-		{
-			if (((QuoteData)quotes[i]).low < low.low )
-			{	
-				low.high = ((QuoteData)quotes[i]).high;
-				low.low = ((QuoteData)quotes[i]).low;
-				low.pos = i;
-				low.time = ((QuoteData)quotes[i]).time;
-			}
-		}
-		
-		return low;
-
-		/*
-		QuoteData low = (QuoteData)quotes[startPos];
-		
-		for ( int i = startPos; i <= endPos; i ++ )
-		{
-			if (((QuoteData)quotes[i]).low < low.low )
-			{	
-				low = (QuoteData)quotes[i];
-			}
-		}
-		
-		return low; */
-
-	
+		return quotes[highPos]; 
 	}
 	
+	static public QuoteData getLow(QuoteData[] quotes, int startPos, int endPos ){
+		int lowPos = startPos;
+		for ( int i = startPos+1; i <= endPos; i ++ ){
+			if (quotes[i].low < quotes[lowPos].low){
+				lowPos = i;
+			}
+		}
+		return quotes[lowPos]; 
+	}
 
 	
 	static public QuoteData getHighOpenClose(QuoteData[] quotes, int startPos, int endPos )
@@ -238,9 +193,6 @@ public class Utility
 	}
 
 	
-	
-
-
 	static public double getAverage(Vector<QuoteData> quotes)
 	{
 		Iterator iterator = quotes.iterator();
@@ -685,34 +637,6 @@ public class Utility
 		    System.out.println("Exception during saving file " + fileName);
 		    	e.printStackTrace();
 		}
-	
-	    
-        // TODO Auto-generated method stub
-	    /*
-        String osname = System.getProperty("os.name", "").toLowerCase();
-        if (osname.startsWith("windows")) {
-            String text = "Hello world Windows";
-            try {
-                File file = new File("C:/example.txt");
-                BufferedWriter output = new BufferedWriter(new FileWriter(file));
-                output.write(text);
-                output.close();
-            } catch ( IOException e ) {
-                e.printStackTrace();
-            }
-        } else if (osname.startsWith("linux")) {    
-            String text = "Hello world Linux";
-            try {
-                File file = new File("/root/Desktop/example.txt");
-                BufferedWriter output = new BufferedWriter(new FileWriter(file));
-                output.write(text);
-                output.close();
-            } catch ( IOException e ) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("Sorry, your operating system is different");    
-        }*/
 	}
 	
 

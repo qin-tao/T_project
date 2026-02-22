@@ -1684,16 +1684,12 @@ public class SFTest extends SF implements EWrapper
 	private void initialize(){
 		firstQuote = new boolean[TOTAL_SYMBOLS];
     	quotes_received = new boolean[TOTAL_SYMBOLS];
-		//instruments = new Instrument[TOTAL_SYMBOLS];
 		instruments = new Instrument[ALL_SYMBOLS];
 	}
 	
 	
-	private void saveHistoryData()
-	{
+	private void saveHistoryData(){
 		try {
-			//logger.info("Save History Data:" + saveHistoryFile);
-
 			FileWriter fw = new FileWriter(saveHistoryFile);
 			Iterator<String> it = historyData.iterator();
 			
@@ -1710,11 +1706,9 @@ public class SFTest extends SF implements EWrapper
 		}
 	}
 	
-	private void saveRealTimeData(String realTimeData )
-	{
+	
+	private void saveRealTimeData(String realTimeData ){
 		try {
-			//logger.info("Save Realtime Data:" + saveRealTimeFile);
-
 			FileWriter fw = new FileWriter(saveRealTimeFile, true );
 			fw.append(realTimeData + "\n");
 			fw.close();
@@ -1724,7 +1718,6 @@ public class SFTest extends SF implements EWrapper
 			e.printStackTrace();
 		}
 	}
-	
 	
 	
 	private void readHistoryData( String historyFileName )  throws FileNotFoundException, IOException

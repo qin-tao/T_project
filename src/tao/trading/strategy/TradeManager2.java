@@ -71,11 +71,7 @@ public abstract class TradeManager2 {
 	protected TradeManagerInf[] tradeManager;
 	HashMap<String, QuoteData>[] qts = new HashMap[Constants.TOTAL_CHARTS];
 	HashMap<Double, Integer> profitTake = new HashMap<Double, Integer>();
-	protected SimpleDateFormat OrderDateFormatter = new SimpleDateFormat("yyyyMMdd HH:mm:ss"); // FORMAT:
-																								// 20060505
-																								// 08:00:00
-																								// {time
-																								// zone}
+	protected SimpleDateFormat OrderDateFormatter = new SimpleDateFormat("yyyyMMdd HH:mm:ss"); 
 	protected Logger logger = Logger.getLogger("TradeManager2");
 	protected Trade trade;
 	int CHART;
