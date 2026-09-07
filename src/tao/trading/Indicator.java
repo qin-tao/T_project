@@ -292,35 +292,6 @@ public class Indicator {
 		return smas;
 		
 	}
-
-	
-	
-	/*
-	public static double[] calculateStochastics( Vector<QuoteData> quotes, int period )
-	{
-		int size = quotes.size();
-		double[] k = new double[size];
-		
-		//%K = (Today's closing price - lowest low during the last [period] days) ÷ 
-		// (highest high during the last [period] days - lowest low during the last [period] days)
-		
-		for( int i = period; i < size; i++ )
-		{
-			double high = 0.0;
-			double low = 999;
-			for ( int j = i; j >= i-period; j--)
-			{
-				if (((QuoteData)quotes.elementAt(j)).high > high )
-					high = ((QuoteData)quotes.elementAt(j)).high;
-				if (((QuoteData)quotes.elementAt(j)).low < low )
-					low = ((QuoteData)quotes.elementAt(j)).low;
-			}
-			k[i] = 100*(((QuoteData)quotes.elementAt(i)).close - low )/(high-low); 
-		}
-		
-		return k;
-		
-	}*/
 	
 	
 	public static double[] calculateStochastics( Vector<QuoteData> quotes, int period )
@@ -335,7 +306,7 @@ public class Indicator {
 		int size = quotes.length;
 		double[] k = new double[size];
 		
-		//%K = (Today's closing price - lowest low during the last [period] days) ÷ 
+		//%K = (Today's closing price - lowest low during the last [period] days) ï¿½ 
 		// (highest high during the last [period] days - lowest low during the last [period] days)
 		
 		for( int i = period; i < size; i++ ){
