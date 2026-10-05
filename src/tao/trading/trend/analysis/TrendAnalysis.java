@@ -622,6 +622,83 @@ public class TrendAnalysis
 	}
 
 
+	/*********************************************************************************************************
+	 * Price is UP_TREND after it has crossed above the 20MA and has not pulled
+	 * back to the MA 3 times. Same rule on the downside for DOWN_TREND.
+	 **********************************************************************************************************/
+	public static int determineBigTrendUsingMA( QuoteData[] quotes )
+	{
+		int lastbar = quotes.length - 1;
+		double[] ema20 = Indicator.calculateEMA(quotes, 20);
+		int maxPullBacks = 3;
+		int crossConfirmBars = 2;
+
+		int lastCrossUp = Pattern.findPriceCross20MAUp(quotes, ema20, lastbar, crossConfirmBars);
+		int lastCrossDown = Pattern.findPriceCross20MADown(quotes, ema20, lastbar, crossConfirmBars);
+
+		if (( lastCrossUp != Constants.NOT_FOUND ) && ( lastCrossUp > lastCrossDown ))
+		{
+			int pullBacks = countPullBacksToMAFromAbove(quotes, ema20, lastCrossUp + 1, lastbar);
+			if ( pullBacks < maxPullBacks )
+				return Constants.DIRECTION_UP;
+		}
+		else if (( lastCrossDown != Constants.NOT_FOUND ) && ( lastCrossDown > lastCrossUp ))
+		{
+			int pullBacks = countPullBacksToMAFromBelow(quotes, ema20, lastCrossDown + 1, lastbar);
+			if ( pullBacks < maxPullBacks )
+				return Constants.DIRECTION_DOWN;
+		}
+
+		return Constants.DIRECTION_UNKNOWN;
+	}
+
+
+	static int countPullBacksToMAFromAbove( QuoteData[] quotes, double[] ema, int start, int end )
+	{
+		int pullBacks = 0;
+		boolean aboveMA = false;
+		if ( start < 0 )
+			start = 0;
+
+		for ( int i = start; i <= end; i++ )
+		{
+			if ( quotes[i].low > ema[i] )
+			{
+				aboveMA = true;
+			}
+			else if ( aboveMA )
+			{
+				pullBacks++;
+				aboveMA = false;
+			}
+		}
+		return pullBacks;
+	}
+
+
+	static int countPullBacksToMAFromBelow( QuoteData[] quotes, double[] ema, int start, int end )
+	{
+		int pullBacks = 0;
+		boolean belowMA = false;
+		if ( start < 0 )
+			start = 0;
+
+		for ( int i = start; i <= end; i++ )
+		{
+			if ( quotes[i].high < ema[i] )
+			{
+				belowMA = true;
+			}
+			else if ( belowMA )
+			{
+				pullBacks++;
+				belowMA = false;
+			}
+		}
+		return pullBacks;
+	}
+
+
 	
 	/*********************************************************************************************************
 	 * 

@@ -133,7 +133,7 @@ public class Utility
 	static public QuoteData getHigh(QuoteData[] quotes, int startPos, int endPos ){
 		int highPos = startPos;
 		for ( int i = startPos+1; i <= endPos; i ++ ){
-			if (quotes[i].high < quotes[highPos].high){
+			if (quotes[i].high > quotes[highPos].high){
 				highPos = i;
 			}
 		}

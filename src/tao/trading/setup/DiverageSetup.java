@@ -280,35 +280,31 @@ public class DiverageSetup {
 	 * 
 	 ****************************************************/
 	public static DiverageDAO findLastDiverageHighClosest(QuoteData[] quotes, int start, int lastbar, double diverageSize ){
-		if ( start < 2 )
-			start = 2;
+		int totalHighBefore = 5;
+		if ( start < totalHighBefore )
+			start = totalHighBefore;
 
 		int dStart = lastbar - 1;
     	loop: while( --dStart >= start ){
-    		// dStart should be lower than the lastbar
-    		if ( quotes[dStart].high > quotes[lastbar].high )
-    			return null;// not the highest
+    		// lastbar must be a new high vs this window
+    		if ( quotes[dStart].high >= quotes[lastbar].high )
+    			return null;
     		
     		// dStart should be the highest other than last bar
-    		QuoteData lastHigh = Utility.getHigh(quotes, dStart+1, lastbar-1);
-    		if ( lastHigh.high > quotes[dStart].high )
-    			continue;
-    		if ( lastHigh.high > quotes[lastbar].high )
-    			continue;  
-    		int totalHighBefore= 5;
-    		for ( int i = 1; i <= totalHighBefore; i++)
-    			if ( quotes[dStart-i].high > quotes[dStart].high )
+    		for ( int i = dStart+1; i < lastbar; i++)
+    			if (( quotes[i].high >= quotes[dStart].high ) || ( quotes[i].high > quotes[lastbar].high ))
     				continue loop;
-    		
-    		//System.out.println("high found at " + quotes[dStart].time + " " + quotes[dStart].high + " " + quotes[lastbar].time + " " + quotes[lastbar].high);
-    		//if ("20241124  18:00:00".equals(quotes[dStart].time ))
-    		//	System.out.println("here");
+
+    		for ( int i = 1; i <= totalHighBefore; i++)
+    			if ( quotes[dStart-i].high >= quotes[dStart].high )
+    				continue loop;
     		
     		QuoteData pullBackLow = Utility.getLow(quotes, dStart+1, lastbar-1);
     		DiverageDAO dv1 = new DiverageDAO(dStart, lastbar);
     		dv1.triggerPrice = quotes[dStart].high;
     		dv1.pullBackSize = quotes[dStart].high - pullBackLow.low;
     		dv1.pullBackWidth = lastbar - dStart - 1;
+    		dv1.prePos = dStart;
     		if ( diverageSize > 0 && dv1.pullBackSize < diverageSize )
     			continue;
 
@@ -325,33 +321,31 @@ public class DiverageSetup {
 	 * 
 	 ****************************************************/
 	public static DiverageDAO findLastDiverageLowClosest(QuoteData[] quotes, int start, int lastbar, double diverageSize ){
-		if ( start < 2 )
-			start = 2;
+		int totalLowBefore = 5;
+		if ( start < totalLowBefore )
+			start = totalLowBefore;
 		
     	int dStart = lastbar - 1;
     	loop: while ( --dStart >= start ){
-    		// dStart should be lower than the lastbar
-    		if ( quotes[dStart].low < quotes[lastbar].low )
-    			return null;  // not the lowest;
+    		// lastbar must be a new low vs this window
+    		if ( quotes[dStart].low <= quotes[lastbar].low )
+    			return null;
     		
-    		// dStart should be the highest other than last bar
-    		QuoteData lastLow = Utility.getLow(quotes, dStart+1, lastbar-1);
-    		if ( lastLow.low < quotes[dStart].low )
-    			continue;
-    		if ( lastLow.low < quotes[lastbar].low )
-    			continue;  // other low in the middle
-    		int totalLowBefore= 5;
-    		for ( int i = 1; i <= totalLowBefore; i++)
-    			if ( quotes[dStart-i].low < quotes[dStart].low )
+    		// dStart should be the lowest other than last bar
+    		for ( int i = dStart+1; i < lastbar; i++)
+    			if (( quotes[i].low <= quotes[dStart].low ) || ( quotes[i].low < quotes[lastbar].low ))
     				continue loop;
-    		//if (!( quotes[dStart-1].low > quotes[dStart].low && quotes[dStart-2].low > quotes[dStart].low && quotes[dStart-3].low > quotes[dStart].low))
-    		//	continue;
+
+    		for ( int i = 1; i <= totalLowBefore; i++)
+    			if ( quotes[dStart-i].low <= quotes[dStart].low )
+    				continue loop;
     		
     		QuoteData pullBackHigh = Utility.getHigh(quotes, dStart+1, lastbar-1);
     		DiverageDAO dv1 = new DiverageDAO(dStart, lastbar);
     		dv1.triggerPrice = quotes[dStart].low;
     		dv1.pullBackSize = pullBackHigh.high - quotes[dStart].low;
     		dv1.pullBackWidth = lastbar - dStart - 1;
+    		dv1.prePos = dStart;
     		if ( diverageSize > 0 && dv1.pullBackSize < diverageSize )
     			continue;
 

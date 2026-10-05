@@ -143,10 +143,9 @@ public class RV_Diverage extends TradeManager2 {
 				
 				//checkDiverageSignal_20250212(data);  // 
 				//checkDiverageSignal_20250527(data);  /
-				QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
-				checkDiverageSignal_20260118(data, quotes, "HOURLY", 48);
-				QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
-				checkDiverageSignal_20260118(data, quotesL, "DAILY", 24);
+				checkDiverageSignal_20260118(data, "HOURLY", 48);
+				//QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
+				//checkDiverageSignal_20260118(data, quotesL, "DAILY", 24);
 				
 
 				// checkDiverageSignal_narrow_breakout(data);
@@ -1588,247 +1587,21 @@ public class RV_Diverage extends TradeManager2 {
 		return null;
 	}
 
+
 	
-	public Trade checkDiverageSignal_20250527(QuoteData data){ // to be replace by heckDiverageSignal_givenBigTrend_new
+	public Trade checkDiverageSignal_20260118(QuoteData data, String time_frame, int gapDiverageWidth){ 
 		QuoteData[] quotes = getQuoteData(Constants.CHART_60_MIN);
-		int lastbar = quotes.length - 1;
-		double[] ema20 = Indicator.calculateEMA(quotes, 20);
-		boolean newTrade = false;
-		String detectDetail = "";
-		double triggerPrice = 0;
+		QuoteData[] quotesL = getQuoteData(Constants.CHART_240_MIN);
 
-		int nbarLow = 2; // the number of bars lower before the last nigh
-		int gapDiverageWidth = 24; // max gap width
-		
-		QuoteData[] quotesL = getQuoteData(Constants.CHART_DAILY);
-		int lastbarL = quotesL.length - 1;
-		//double[] emaL20 = Indicator.calculateEMA(quotesL, 20);
-		int avgBarSizeL = (int)(BarUtil.averageBarSize(quotesL)/PIP_SIZE);
-		int avgBarSize = (int)(BarUtil.averageBarSize(quotes)/PIP_SIZE);
-		
-		// check big trend first
-		HHLLDetector hhllDector = new HHLLDetector(quotesL,PIP_SIZE);
-		BarTrendBarDTO[] trends = hhllDector.getTrends();
-		BarTrendBarDTO lastTrend = trends[trends.length-1];
-		BarTrendBarDTO previousTrend = trends[trends.length-2];
-		BarTrendBarDTO ppTrend = trends[trends.length-3];
-
-		//if (lastTrend.getSize(PIP_SIZE) < avgBarSizeL * 2)
-		//	return null;
-		
-		if ( lastTrend.direction == Constants.DIRECTION_DOWN ) {
-			if (BarUtil.isUpBar(quotes[lastbar]) && (quotes[lastbar].high >= ema20[lastbar])) {
-				double startLow = Utility.getLow(quotesL, lastTrend.begin, lastTrend.end).low;
-				int start = Utility.getQuotePositionByLow(quotes, startLow);
-				
-				PushList pushList = Pattern.findPast1Highs1(quotes, start, lastbar);
-				if ((pushList != null ) && ( pushList.phls != null ) ){
-					PushHighLow[] phls = pushList.phls;
-					PushHighLow lastPush = phls[phls.length - 1]; 
-					
-					if (( lastPush.pullBackSize/PIP_SIZE > 1.5 * avgBarSize ) ||  ( pushList.phls.length >= 5))
-						return null;
-
-					System.out.println("last trend:" + lastTrend.direction + " " + quotesL[lastTrend.begin].time + " " + quotesL[lastTrend.begin].high + " " + quotesL[lastTrend.end].time + " " + quotesL[lastTrend.end].low);
-					System.out.println("start low: " + quotes[start].time + " " + quotes[start].low);
-
-					triggerPrice = quotes[lastPush.prePos].high;
-					
-					QuoteData[] quotesS = getQuoteData(Constants.CHART_1_MIN);
-					int lastbarS = quotesS.length - 1;
-					int triggerPos = Utility.getQuotePositionByHigh(quotesS, triggerPrice);
-
-					if ( quotesS[lastbarS].high < triggerPrice )
-						return null;
-
-					for ( int j = triggerPos + 1; j < lastbarS; j++)
-						if ( quotesS[j].high > triggerPrice )
-							return null;
-
-
-					/*int highEnd = lastPush.prePos;
-					int highStart = highEnd;
-					while (BarUtil.isUpBar(quote5[highStart-1]))
-						highStart--;
-					
-					double pushSize = quote5[highEnd].high - quote5[highStart].low;
-					
-					for (int i = tradeEntryPos5; i <= lastbar5; i++)
-						if ( quote5[i].close < trade.entryPrice) 
-							numOfBarAboveEntry++;
-					//System.out.println("trigger price:" + triggerPrice + " number of bar:" + numOfBarAboveEntry);
-
-					if (( numOfBarAboveEntry < 12 ) && ( pushSize > 0.7 * FIXED_STOP * PIP_SIZE )) {	
-						double price = triggerPrice;
-						warning("close buy trade with preempertive reversal");
-						int remainingPositionSize = trade.remainingPositionSize; 
-						enterMarketPosition(price, remainingPositionSize);
-						return;
-					}*/
-
-				
-			/*	DiverageDAO dv = DiverageSetup.findLastDiverageHighClosest(quotes, start, lastbar, 2, 10 * PIP_SIZE );  
-				if (dv != null) {
-					System.out.println("last trend:" + lastTrend.direction + " " + quotesL[lastTrend.begin].time + " " + quotesL[lastTrend.begin].high + " " + quotesL[lastTrend.end].time + " " + quotesL[lastTrend.end].low);
-					System.out.println("start low: " + quotes[start].time + " " + quotes[start].low);
-					System.out.println("diverage:" + quotes[dv.prePos].time + " " + quotes[dv.prePos].high + " " + quotes[dv.curPos].time + " " + quotes[dv.curPos].high + " triggerPrice:" + dv.triggerPrice);
-					
-					//if ( quotes[lastbar-1].close > dv.triggerPrice )
-					//	return null;
-
-					QuoteData[] quotesS = getQuoteData(Constants.CHART_1_MIN);
-					int lastbarS = quotesS.length - 1;
-					int triggerPos = Utility.getQuotePositionByHigh(quotesS, dv.triggerPrice);
-					//System.out.println("Previous low small time frame:" + quotesS[triggerPos].time + " currentTime:" + quotesS[lastbarS].time);
-
-					if ( quotesS[lastbarS].high < dv.triggerPrice )
-						return null;
-
-					for ( int j = triggerPos + 1; j < lastbarS; j++)
-						if ( quotesS[j].high > dv.triggerPrice )
-							return null;
-*/
-
-					if (findTradeHistory(Constants.ACTION_SELL, quotes[start].time) != null)
-						return null;
-					
-					//triggerPrice = quotesS[lastbarS].close;
-
-					if (trade != null) {
-						if (Constants.ACTION_SELL.equals(trade.action)) {
-							return trade;
-						} else if (trade.status.equals(Constants.STATUS_FILLED)) {
-							closePositionByMarket(trade.remainingPositionSize, triggerPrice);
-						}
-					}
-					//if (!( (dv.pullBackSize > 20 * PIP_SIZE) || (dv.pullBackSize > (10 * PIP_SIZE) && (lastTrend.getLength() > 1) )))
-					//	return null;
-
-					//detectDetail = "Prev High: " + quotes[dv.prePos].time + " " + quotes[dv.prePos].high + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
-					warning(symbol + " SELL detected " + data.time + detectDetail);
-					//hhllDector.printTrend(quotesL, PIP_SIZE);
-
-					createOpenTrade(Constants.TRADE_RV, Constants.ACTION_SELL);
-					trade.status = Constants.STATUS_DETECTED;
-					trade.detectTime = quotes[lastbar].time;
-					trade.setFirstBreakOutStartTime(quotes[start].time);// for history lookup only
-					newTrade = true;
-				}
-			}
-		}else if ( lastTrend.direction == Constants.DIRECTION_UP ) {
-			
-			if (BarUtil.isDownBar(quotes[lastbar]) && (quotes[lastbar].low <= ema20[lastbar])) {
-				double startHigh = Utility.getHigh(quotesL, lastTrend.begin, lastTrend.end).high;
-				int start = Utility.getQuotePositionByHigh(quotes, startHigh);
-				
-				PushList pushList = Pattern.findPast1Lows1(quotes, start, lastbar);
-				if ((pushList != null ) && ( pushList.phls != null )){
-					PushHighLow[] phls = pushList.phls;
-					PushHighLow lastPush = phls[phls.length - 1]; 
-					
-					if (( lastPush.pullBackSize/PIP_SIZE > 1.5 * avgBarSize ) ||  ( pushList.phls.length >= 5))
-						return null;
-
-					System.out.println("last trend:" + lastTrend.direction + " " + quotesL[lastTrend.begin].time + " " + quotesL[lastTrend.begin].low + " " + quotesL[lastTrend.end].time + " " + quotesL[lastTrend.end].high);
-					System.out.println("start high: " + quotes[start].time + " " + quotes[start].high);
-
-					triggerPrice = quotes[lastPush.prePos].low;
-					
-					QuoteData[] quotesS = getQuoteData(Constants.CHART_1_MIN);
-					int lastbarS = quotesS.length - 1;
-					int triggerPos = Utility.getQuotePositionByLow(quotesS, triggerPrice);
-
-					if ( quotesS[lastbarS].low > triggerPrice )
-						return null;
-
-					for ( int j = triggerPos + 1; j < lastbarS; j++)
-						if ( quotesS[j].low < triggerPrice )
-							return null;
-
-					
-			/*	DiverageDAO dv = DiverageSetup.findLastDiverageLowClosest(quotes, start, lastbar, 2, 10 * PIP_SIZE );  
-				if (dv != null) {
-					//System.out.println("previous trend:" + quotesL[previousTrend.begin].time + " " + quotesL[previousTrend.begin].low + " " + quotesL[previousTrend.end].time + " " + quotesL[previousTrend.end].high);
-					//System.out.println("last trend:" + quotesL[lastTrend.begin].time + " " + quotesL[lastTrend.begin].low + " " + quotesL[lastTrend.end].time + " " + quotesL[lastTrend.end].high);
-					//System.out.println("diverage:" + quotes[dv.prePos].time + " " + quotes[dv.prePos].low + " " + quotes[dv.curPos].time + " " + quotes[dv.curPos].low + " triggerPrice:" + dv.triggerPrice);
-					
-					QuoteData[] quotesS = getQuoteData(Constants.CHART_1_MIN);
-					int lastbarS = quotesS.length - 1;
-					int triggerPos = Utility.getQuotePositionByLow(quotesS, dv.triggerPrice);
-					if ( triggerPos == -1 )
-						return null;
-					//System.out.println("Previous low small time frame:" + quotesS[triggerPos].time + " currentTime:" + quotesS[lastbarS].time);
-
-					if ( quotesS[lastbarS].low > dv.triggerPrice )
-						return null;
-
-					for ( int j = triggerPos + 1; j < lastbarS; j++)
-						if ( quotesS[j].low < dv.triggerPrice )
-							return null;
-					
-					triggerPrice = quotesS[lastbarS].close;
-				*/	
-					if (findTradeHistory(Constants.ACTION_BUY, quotes[start].time) != null)
-						return null;
-					
-					if (trade != null) {
-						if (Constants.ACTION_BUY.equals(trade.action)) {
-							return trade;
-						} else if (trade.status.equals(Constants.STATUS_FILLED)) {
-							closePositionByMarket(trade.remainingPositionSize, triggerPrice);
-						}
-					}
-					//if (!( (dv.pullBackSize > 20 * PIP_SIZE) || (dv.pullBackSize > (10 * PIP_SIZE) && (lastTrend.getLength() > 1) )))
-					//	return null;
-
-					//detectDetail = "Prev High: " + quotes[dv.prePos].time + " " + quotes[dv.prePos].high + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
-					warning(symbol + " BUY detected " + data.time + detectDetail + " triggerPrice:" + triggerPrice);
-					//hhllDector.printTrend(quotesL, PIP_SIZE);
-
-					createOpenTrade(Constants.TRADE_RV, Constants.ACTION_BUY);
-					trade.status = Constants.STATUS_DETECTED;
-					trade.detectTime = quotes[lastbar].time;
-					trade.setFirstBreakOutStartTime(quotes[start].time);// for history lookup only
-					newTrade = true;
-				}
-			}
-		}
-
-		if ( newTrade ) {
-			TradeEvent tv = new TradeEvent(TradeEvent.TRADE_DETECTED, quotes[lastbar].time);
-			tv.addNameValue("Detected", detectDetail);
-			trade.addTradeEvent(tv);
-
-			if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
-				super.strategy.addStrategyTrigger( trade.symbol + " " + trade.detectTime + " " + trade.action + " " + triggerPrice);
-				super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " chart:" + Constants.CHART_60_MIN + " " + trade.action + " " + triggerPrice, trade);
-			}
-					 
-			if (MODE == Constants.SIGNAL_MODE) {
-				removeTrade();
-				return null;
-			} else {
-				enterMarketPosition(triggerPrice);
-				return trade;
-			}
-
-		}
-		return null;
-	}	
-
-
-	
-	public Trade checkDiverageSignal_20260118(QuoteData data, QuoteData[] quotes, String time_frame, int gapDiverageWidth){ 
 		int lastbar = quotes.length - 1;
 		double[] ema = Indicator.calculateEMA(quotes, 20);
+		int bigTrend = TrendAnalysis.determineBigTrendUsingMA(quotesL);
 
-		int nbarLow = 2; 			// the number of bars lower before the last nigh
-		
-		if ((quotes[lastbar].low >= ema[lastbar])) {
+		if (BarUtil.isUpBar(quotes[lastbar]) && (quotes[lastbar].high >= ema[lastbar]) && (bigTrend == Constants.DIRECTION_DOWN)) {
 			for (int i = lastbar - 4; i >= lastbar - gapDiverageWidth; i--) {
 				DiverageDAO dv = DiverageSetup.findLastDiverageHighClosest(quotes, i, lastbar, 0 );  
 				if (dv != null) {
-					if ( quotes[lastbar-1].close > dv.triggerPrice )
+					if ( quotes[lastbar-1].high > dv.triggerPrice )
 						return null;
 					
 					if (findTradeHistory(Constants.ACTION_SELL, quotes[dv.prePos].time) != null)
@@ -1870,11 +1643,11 @@ public class RV_Diverage extends TradeManager2 {
 					}
 				}
 			}
-		} else if (quotes[lastbar].high < ema[lastbar]) {
+		} else if (BarUtil.isDownBar(quotes[lastbar]) && (quotes[lastbar].low <= ema[lastbar])&& (bigTrend == Constants.DIRECTION_UP)) {
 			for (int i = lastbar - 4; i >= lastbar - gapDiverageWidth; i--) {
 				DiverageDAO dv = DiverageSetup.findLastDiverageLowClosest(quotes, i, lastbar, 0 );  
 				if (dv != null) {
-					if ( quotes[lastbar-1].close < dv.triggerPrice )
+					if ( quotes[lastbar-1].low < dv.triggerPrice )
 						return null;
 					
 					if (findTradeHistory(Constants.ACTION_BUY, quotes[dv.prePos].time) != null)
@@ -1891,10 +1664,11 @@ public class RV_Diverage extends TradeManager2 {
 					}
 
 					String detectDetail = "Prev Low:" + quotes[dv.prePos].low + " " + quotes[dv.prePos].time + " pullbackSize: " + dv.pullBackSize / PIP_SIZE + " pullbackWidth: " + dv.pullBackWidth;
-					//warning(symbol + " BUY detected " + data.time + detectDetail);
 
 					createOpenTrade(Constants.TRADE_RV, Constants.ACTION_BUY);
 					trade.status = Constants.STATUS_DETECTED;
+					trade.detectTime = quotes[lastbar].time;
+					trade.setFirstBreakOutStartTime(quotes[dv.prePos].time);// for history lookup only
 
 					TradeEvent tv = new TradeEvent(TradeEvent.TRADE_DETECTED, quotes[lastbar].time);
 					tv.addNameValue("Detected", detectDetail);
@@ -1902,7 +1676,6 @@ public class RV_Diverage extends TradeManager2 {
 					tv.addNameValue("Previous Low Time", quotes[dv.prePos].time);
 					trade.addTradeEvent(tv);
 
-					triggerPrice = quotes[dv.prePos].low;
 					if ((MODE == Constants.SIGNAL_MODE) || (MODE == Constants.REAL_MODE)) {
 						super.strategy.addStrategyTrigger( trade.symbol + " " + trade.detectTime + " " + trade.action + " " + triggerPrice);
 						super.strategy.sentAlertEmail(AlertOption.detect, trade.symbol + " " + time_frame + " " + trade.action + " " + triggerPrice, trade);

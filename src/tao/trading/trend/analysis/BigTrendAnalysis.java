@@ -12,10 +12,8 @@ import tao.trading.QuoteData;
 import tao.trading.dao.PushList;
 import tao.trading.strategy.util.Utility;
 
-public class BigTrendAnalysis
-{
+public class BigTrendAnalysis{
 	public int direction;
-	
 
 	public String feature;
 	public int start;
@@ -44,7 +42,6 @@ public class BigTrendAnalysis
 			Push p = (Push)it.next();
 			strBuf.append(((p.direction == Constants.DIRECTION_UP)?"UP  ":"DOWN") + "  start:" + quotes[p.pushStart].time + " end:" + quotes[p.pushEnd].time + " duration:" + p.duration + "\n");
 		}
-		
 		
 		
 		//strBuf.append("Num of Touches:" + maTouches.length + "\n");
@@ -181,7 +178,6 @@ public class BigTrendAnalysis
 	}
 
 
-	
 	
 	
 
