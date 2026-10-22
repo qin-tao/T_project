@@ -1303,7 +1303,7 @@ public class FirstPullBackAfterBreakOut extends TradeManager2
 				double diverageSize = (entryPrice - lowAfterFirstBreakOut.low)/PIP_SIZE;
 				//System.out.println("PULLBACKSIZE:" + PULLBACK_SIZE + " AVGbarsize:" + BarUtil.averageBarSize(quotes, lastbar-121, lastbar-1)/PIP_SIZE);
 				if (( lowAfterFirstBreakOut != null ) && (diverageSize > getPullBackSize())){
-					fine("entry buy diverage low is" + lowAfterFirstBreakOut.low + " diverage is "+  + diverageSize + "pips,  too large, trade removed");
+					fine("entry buy diverage low is" + lowAfterFirstBreakOut.low + " diverage is " + diverageSize + "pips,  too large, trade removed");
 					return null;
 				}
 
@@ -1423,7 +1423,7 @@ public class FirstPullBackAfterBreakOut extends TradeManager2
 				double diverageSize = (highAfterFirstBreakOut.high - entryPrice)/PIP_SIZE;
 				//System.out.println("PULLBACKSIZE:" + PULLBACK_SIZE + " AVGbarsize:" + BarUtil.averageBarSize(quotes, lastbar-121, lastbar-1)/PIP_SIZE);
 				if (( highAfterFirstBreakOut != null ) && (diverageSize > getPullBackSize())){
-					fine("entry sell diverage low is" + highAfterFirstBreakOut.high + " diverageSize is "+  + diverageSize + "pips,  too large, trade removed");
+					fine("entry sell diverage low is" + highAfterFirstBreakOut.high + " diverageSize is " + diverageSize + "pips,  too large, trade removed");
 					return null;
 				}
 						

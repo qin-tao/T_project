@@ -145,8 +145,8 @@ public class BarTrendDetector {
 	}
 	
 	
-	public BarTrendBarDTO getLastTrend(){
-		return bars.get(trend_sorters.size()-1);
+	public BarTrendTrendDTO getLastTrend(){
+		return trend_sorters.get(trend_sorters.size()-1);
 	}
 
 	public List<BarTrendBarDTO> getTrends(){
@@ -243,40 +243,35 @@ public class BarTrendDetector {
 	
 	//this one
 	public BarTrendBarDTO detectTrend(){
+		if (bars.size() < 2)
+			return null;
 		int lastElement = bars.size()-1;
 		BarTrendBarDTO preElement = bars.get(lastElement-1);
 		BarTrendBarDTO curElement = bars.get(lastElement);
 
 		double avgOpenCloseBarSize = BarUtil.averageBarSizeOpenClose(original_quotes);
 		if ( Math.abs(original_quotes[curElement.begin].open - original_quotes[curElement.end].close ) > 2.5 * avgOpenCloseBarSize){
-			if ( curElement.direction == Constants.DIRECTION_UP ) {
-				return new BarTrendBarDTO(TYPE_1, Constants.TREND_UP, original_quotes[curElement.begin]);
-				//return null;
-			}
-			else if ( curElement.direction == Constants.DIRECTION_DOWN ) {
-				return new BarTrendBarDTO(TYPE_1, Constants.TREND_DOWN, original_quotes[curElement.begin]);
-				//return null;
-				
-			}
+			if ( curElement.direction == Constants.DIRECTION_UP )
+				return buildTrend(TYPE_1, Constants.TREND_UP, curElement, avgOpenCloseBarSize);
+			else if ( curElement.direction == Constants.DIRECTION_DOWN )
+				return buildTrend(TYPE_1, Constants.TREND_DOWN, curElement, avgOpenCloseBarSize);
 		}
-		
+
 		if ( Math.abs(original_quotes[preElement.begin].open - original_quotes[preElement.end].close ) > 2.5 * avgOpenCloseBarSize){
+			double runHigh = getHigh(preElement);
+			double runLow = getLow(preElement);
 			if ( preElement.direction == Constants.DIRECTION_UP ){
-				double point618 = original_quotes[preElement.end].high - 0.618*(original_quotes[preElement.end].high - original_quotes[preElement.begin].low);
-				//if ( original_quotes[curElement.end].low > original_quotes[preElement.begin].open )
-				if ( original_quotes[curElement.end].low > point618 )
-					return new BarTrendBarDTO(TYPE_2, Constants.TREND_UP, original_quotes[preElement.begin]);
-					//return null;
-			}	
+				double point618 = runHigh - 0.618*(runHigh - runLow);
+				if ( getLow(curElement) > point618 )
+					return buildTrend(TYPE_2, Constants.TREND_UP, preElement, avgOpenCloseBarSize);
+			}
 			else if ( preElement.direction == Constants.DIRECTION_DOWN ){
-				double point618 = original_quotes[preElement.end].low + 0.618*(original_quotes[preElement.begin].high - original_quotes[preElement.end].low);
-				//if ( original_quotes[curElement.end].high < original_quotes[preElement.begin].open )
-				if ( original_quotes[curElement.end].high < point618 )
-					return new BarTrendBarDTO(TYPE_2, Constants.TREND_DOWN, original_quotes[preElement.begin]);
-					//return null;
-			}	
+				double point618 = runLow + 0.618*(runHigh - runLow);
+				if ( getHigh(curElement) < point618 )
+					return buildTrend(TYPE_2, Constants.TREND_DOWN, preElement, avgOpenCloseBarSize);
+			}
 		}
-		
+
 		return null;
 		
 		/*
@@ -316,6 +311,47 @@ public class BarTrendDetector {
 		}
 		return null;*/
 		
+	}
+
+	public BarTrendBarDTO detectBigBarTrend(double minMultiple, int maxAge, double maxRetrace){
+		int last = original_quotes.length - 1;
+		for (int e = bars.size() - 1; e >= 0; e--){
+			BarTrendBarDTO run = bars.get(e);
+			if (run.end < last - maxAge)
+				break;
+			if (( run.direction != Constants.DIRECTION_UP ) && ( run.direction != Constants.DIRECTION_DOWN ))
+				continue;
+			if ( Math.abs(original_quotes[run.end].close - original_quotes[run.begin].open) < minMultiple * avgBarSizeOpenClose )
+				continue;
+
+			double runHigh = getHigh(run);
+			double runLow = getLow(run);
+			boolean valid = true;
+			for (int i = run.end + 1; i <= last; i++){
+				if (run.direction == Constants.DIRECTION_UP && original_quotes[i].low < runHigh - maxRetrace * (runHigh - runLow))
+					valid = false;
+				if (run.direction == Constants.DIRECTION_DOWN && original_quotes[i].high > runLow + maxRetrace * (runHigh - runLow))
+					valid = false;
+			}
+			if (!valid)
+				continue;
+
+			int trend = (run.direction == Constants.DIRECTION_UP) ? Constants.TREND_UP : Constants.TREND_DOWN;
+			return buildTrend(( run.end == last ) ? TYPE_1 : TYPE_2, trend, run, avgBarSizeOpenClose);
+		}
+		return null;
+	}
+
+	private BarTrendBarDTO buildTrend(int type, int trend, BarTrendBarDTO run, double avgOpenCloseBarSize){
+		BarTrendBarDTO t = new BarTrendBarDTO(type, trend, original_quotes[run.begin]);
+		t.begin = run.begin;
+		t.end = run.end;
+		t.open = original_quotes[run.begin].open;
+		t.close = original_quotes[run.end].close;
+		t.high = getHigh(run);
+		t.low = getLow(run);
+		t.triggerBarSize = Math.abs(t.close - t.open) / avgOpenCloseBarSize;
+		return t;
 	}
 
 	public BarTrendTrendDTO getTrendDirection2(){
@@ -365,7 +401,7 @@ public class BarTrendDetector {
 					return null;
 		}
 		else if (BarUtil.isDownBar(original_quotes[breakOutBar])){
-			for ( int i = lastbar-2; i >= lastbar-5; i--)
+			for ( int i = breakOutBar-1; i >= breakOutBar-4; i--)
 				if (original_quotes[i].low < original_quotes[breakOutBar].low)
 					return null;
 		}
@@ -561,7 +597,7 @@ public class BarTrendDetector {
 					return null;
 		}
 		else if (BarUtil.isDownBar(original_quotes[breakOutBar])){
-			for ( int i = lastbar-2; i >= lastbar-5; i--)
+			for ( int i = breakOutBar-1; i >= breakOutBar-4; i--)
 				if (original_quotes[i].low < original_quotes[breakOutBar].low)
 					return null;
 		}
@@ -790,9 +826,10 @@ public class BarTrendDetector {
 				detect.direction = Constants.DIRECTION_UP_ON_PULLBACK;
 				detect.high = quotes[prevBar.begin].high;
 			}
-			else if ( prevBar.direction == Constants.DIRECTION_DOWN )
+			else if ( prevBar.direction == Constants.DIRECTION_DOWN ){
 				detect.direction = Constants.DIRECTION_DOWN_ON_PULLBACK;
 				detect.low = quotes[prevBar.begin].low;
+			}
 		}
 		return detect;
 	}
@@ -808,7 +845,7 @@ public class BarTrendDetector {
 	}
 	
 	private double getLow( BarTrendBarDTO btdd ){
-		double low = 999;
+		double low = Double.MAX_VALUE;
 		for ( int i = btdd.begin; i <= btdd.end; i++){
 			if ( original_quotes[i].low < low )
 				low = original_quotes[i].low;

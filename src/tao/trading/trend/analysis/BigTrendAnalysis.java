@@ -103,78 +103,37 @@ public class BigTrendAnalysis{
 	
 	
 
-	BigTrend calculateTrend( QuoteData[] quotes )
-	{
-		// this is to be expected on 240 min chart
-		int lastbar = quotes.length - 1;
-		double[] ema5 = Indicator.calculateEMA(quotes, 5);
+	BigTrend calculateTrend( QuoteData[] quotes ){
+
 		double[] ema20 = Indicator.calculateEMA(quotes, 20);
-		
+
+		int barsAbove = 0, barsBelow = 0;
+		for ( int i = 0; i < quotes.length; i++)
+		{
+			if ( quotes[i].low > ema20[i] )
+				barsAbove++;
+			else if ( quotes[i].high < ema20[i] )
+				barsBelow++;
+		}
+
 		BigTrend bigTrend = new BigTrend();
 		bigTrend.direction = Constants.DIRT_UNKNOWN;
+		bigTrend.dir = Constants.DIRECTION_UNKNOWN;
 
-		int lastUpPos = Pattern.findLastPriceConsectiveAboveMA(quotes, ema20, lastbar, 5);
-		int lastDownPos = Pattern.findLastPriceConsectiveBelowMA(quotes, ema20, lastbar, 5);
-
-		// looking for first 5MA cross that has more than 5 bars
-		if ( lastUpPos > lastDownPos)
+		if (( barsAbove >= 2 ) && ( barsBelow == 0 ))
 		{
-			//debug("check buy");
-			int start = lastDownPos;
-			while (!(( quotes[start].low > ema20[start] ) && ( quotes[start+1].low > ema20[start+1] )))
-					start++;
-			bigTrend.start = start;
-			
-			int touch20MA = -1;
-			for ( int i = start+1; i <=lastbar; i++)
-			{
-				if (quotes[i].low < ema20[i])
-				{
-					touch20MA = i;
-					break;
-				}
-			}
-			
-			if ( touch20MA == -1 )
-			{
-				bigTrend.state = BigTrend.STATE_BREAKOUT;
-				return bigTrend;
-			}
-			
-			
-			// now touched 20MA, to see how deep the pull back is
-			boolean deepPullBack = false;
-			for ( int i = lastbar; i < start+1; i--)
-			{	
-				PushList pushList = Pattern.findPast1Highs1(quotes, start, i);
-
-				if ((pushList != null ) && (pushList.phls != null) && (pushList.phls.length > 0 ))
-				{
-					// check each one System.out.println("find high @" + data.time);
-					for ( int i = 0; i < pushList.phls.length; i++)
-					{
-						if (( quotes[pushList.phls[i].prePos].high - pushList.phls[i].pullBack.low )  > 2 * FIXED_STOP * SIZE ) 
-						{
-							deepPullBack = true;
-							break;
-						}
-					}
-				}
-			}
-				
-			
-			
-			//
-			// if it has not reach any push, to see if there's any large pull back that would change the trend
-			QuoteData highestPoint = Utility.getHigh( quotes, start, lastbar);
-			QuoteData latestLow = Utility.getLow ( quotes, highestPoint.pos + 1, lastbar);
-			if ( highestPoint.high - latestLow.low ) > 200 * PIP_SIZE )
-			{
-				
-			}
-			
+			bigTrend.direction = Constants.DIRT_UP;
+			bigTrend.dir = Constants.DIRECTION_UP;
+			bigTrend.state = BigTrend.STATE_UP;
 		}
-		return null;
+		else if (( barsBelow >= 2 ) && ( barsAbove == 0 ))
+		{
+			bigTrend.direction = Constants.DIRT_DOWN;
+			bigTrend.dir = Constants.DIRECTION_DOWN;
+			bigTrend.state = BigTrend.STATE_DOWN;
+		}
+
+		return bigTrend;
 	}
 
 
